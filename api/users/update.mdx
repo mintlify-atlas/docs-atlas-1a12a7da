@@ -1,0 +1,194 @@
+---
+title: 'Update User'
+api: 'POST /api/user/user-update'
+description: 'Update an existing user information'
+---
+
+## Endpoint
+
+```
+POST /api/user/user-update
+```
+
+## Authentication
+
+No authentication required.
+
+## Request Body
+
+<ParamField body="id" type="string" required>
+  The ID of the user to update
+</ParamField>
+
+<ParamField body="nombre" type="string">
+  User's first name (will be converted to uppercase)
+</ParamField>
+
+<ParamField body="apellidoPaterno" type="string">
+  User's paternal last name (will be converted to uppercase)
+</ParamField>
+
+<ParamField body="apellidoMaterno" type="string">
+  User's maternal last name (will be converted to uppercase)
+</ParamField>
+
+<ParamField body="dni" type="string">
+  User's national identification number (DNI)
+</ParamField>
+
+<ParamField body="cumpleanios" type="string">
+  User's birthday
+</ParamField>
+
+<ParamField body="genero" type="string">
+  User's gender
+</ParamField>
+
+<ParamField body="img" type="string">
+  User's profile image URL
+</ParamField>
+
+<ParamField body="celular" type="string">
+  User's phone number
+</ParamField>
+
+<ParamField body="direccion" type="string">
+  User's address
+</ParamField>
+
+<ParamField body="correo" type="string">
+  User's email address
+</ParamField>
+
+<ParamField body="password" type="string">
+  User's password
+</ParamField>
+
+<ParamField body="estado" type="string">
+  User's status. Allowed values: `activo`, `inactivo`
+</ParamField>
+
+## Response
+
+### Success Response
+
+<ResponseField name="message" type="string">
+  Success message: "Usuario cambiado"
+</ResponseField>
+
+<ResponseField name="userUpdate" type="object">
+  The updated user object
+  
+  <ResponseField name="_id" type="string">
+    User's unique identifier
+  </ResponseField>
+  
+  <ResponseField name="nombre" type="string">
+    User's first name (uppercase)
+  </ResponseField>
+  
+  <ResponseField name="apellidoPaterno" type="string">
+    User's paternal last name (uppercase)
+  </ResponseField>
+  
+  <ResponseField name="apellidoMaterno" type="string">
+    User's maternal last name (uppercase)
+  </ResponseField>
+  
+  <ResponseField name="dni" type="string">
+    User's national identification number
+  </ResponseField>
+  
+  <ResponseField name="cumpleanios" type="string">
+    User's birthday
+  </ResponseField>
+  
+  <ResponseField name="genero" type="string">
+    User's gender
+  </ResponseField>
+  
+  <ResponseField name="img" type="string">
+    User's profile image URL
+  </ResponseField>
+  
+  <ResponseField name="celular" type="string">
+    User's phone number
+  </ResponseField>
+  
+  <ResponseField name="direccion" type="string">
+    User's address
+  </ResponseField>
+  
+  <ResponseField name="correo" type="string">
+    User's email address
+  </ResponseField>
+  
+  <ResponseField name="estado" type="string">
+    User's status (activo or inactivo)
+  </ResponseField>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.example.com/api/user/user-update \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "507f1f77bcf86cd799439011",
+    "nombre": "Juan Carlos",
+    "apellidoPaterno": "Perez",
+    "apellidoMaterno": "Garcia",
+    "celular": "+51999888777",
+    "direccion": "Av. Nueva Direccion 789, Lima",
+    "estado": "activo"
+  }'
+```
+
+## Example Response
+
+### Success (200 OK)
+
+```json
+{
+  "message": "Usuario cambiado",
+  "userUpdate": {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "JUAN CARLOS",
+    "apellidoPaterno": "PEREZ",
+    "apellidoMaterno": "GARCIA",
+    "dni": "12345678",
+    "cumpleanios": "1990-01-15",
+    "genero": "masculino",
+    "celular": "+51999888777",
+    "direccion": "Av. Nueva Direccion 789, Lima",
+    "correo": "juan.perez@example.com",
+    "estado": "activo"
+  }
+}
+```
+
+## Error Responses
+
+### 404 Not Found
+
+Returned when the user with the specified ID is not found.
+
+```json
+{
+  "error": "usuario no encontrado"
+}
+```
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": "Error interno del servidor"
+}
+```
+
+## Notes
+
+- The `nombre`, `apellidoPaterno`, and `apellidoMaterno` fields are automatically converted to uppercase
+- Only the fields provided in the request body will be updated
+- The `id` field is required to identify which user to update

@@ -1,0 +1,85 @@
+---
+title: "Get Physiotherapist by ID"
+api: "GET /api/fisioterapeuta/{id}"
+description: "Retrieve a specific physiotherapist by their unique ID"
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the physiotherapist
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique identifier for the physiotherapist
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Physiotherapist's first name
+</ResponseField>
+
+<ResponseField name="apellidoPaterno" type="string">
+  Physiotherapist's paternal last name
+</ResponseField>
+
+<ResponseField name="apellidoMaterno" type="string">
+  Physiotherapist's maternal last name
+</ResponseField>
+
+<ResponseField name="especialidad" type="string">
+  Medical specialty
+</ResponseField>
+
+<ResponseField name="telefono" type="string">
+  Mobile phone number
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Email address
+</ResponseField>
+
+<ResponseField name="img" type="string">
+  Profile image URL
+</ResponseField>
+
+<ResponseField name="colegiatura" type="string">
+  Professional license number
+</ResponseField>
+
+<ResponseField name="universidad" type="string">
+  University where the degree was obtained
+</ResponseField>
+
+<ResponseField name="descProfesional" type="string">
+  Professional description and biography
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.example.com/api/fisioterapeuta/507f1f77bcf86cd799439011
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "id": "507f1f77bcf86cd799439011",
+  "nombre": "Carlos",
+  "apellidoPaterno": "García",
+  "apellidoMaterno": "López",
+  "especialidad": "Fisioterapia Deportiva",
+  "telefono": "+51987654321",
+  "email": "carlos.garcia@example.com",
+  "img": "https://example.com/images/carlos-garcia.jpg",
+  "colegiatura": "FT-12345",
+  "universidad": "Universidad Nacional Mayor de San Marcos",
+  "descProfesional": "Especialista en rehabilitación deportiva con 10 años de experiencia"
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,504 @@
+---
+title: 'User Roles'
+description: 'Understanding user roles and role-based access control in the Fisioterapia API'
+---
+
+## Overview
+
+The Fisioterapia API implements a **role-based access control (RBAC)** system with three distinct user roles. Each role has different capabilities and permissions within the system. Roles are managed using Mongoose discriminators on the base user model.
+
+## User Role Types
+
+The system supports three user roles, defined by the `rol` discriminator field:
+
+<CardGroup cols={3}>
+  <Card title="Paciente" icon="user">
+    Patients who receive physiotherapy services
+  </Card>
+  
+  <Card title="Fisioterapeuta" icon="user-doctor">
+    Licensed physiotherapists who provide treatments
+  </Card>
+  
+  <Card title="Admin" icon="user-shield">
+    Administrative staff who manage the system
+  </Card>
+</CardGroup>
+
+## Role Implementation
+
+Roles are implemented using Mongoose's **discriminator pattern** with the `rol` field as the discriminator key:
+
+```javascript
+// src/models/usuarioModel.js
+const options = { discriminatorKey: "rol", collection: "user"}
+
+const userSchema = mongoose.Schema({
+  // ... base user fields ...
+}, options)
+
+export const userModel = mongoose.model("user", userSchema)
+```
+
+<Info>
+The `rol` field is automatically set when creating users through discriminator models (`pacienteModel`, `fisioModel`, `adminModel`).
+</Info>
+
+## Paciente (Patient)
+
+### Role Identifier
+
+```javascript
+rol: "paciente"
+```
+
+### Patient-Specific Fields
+
+```javascript
+// src/models/pacienteModel.js
+const pacienteSchema = new mongoose.Schema({
+  historialMedico: [String],  // Medical history records
+  alergias: [String]           // Known allergies
+});
+
+export const pacienteModel = userModel.discriminator("paciente", pacienteSchema);
+```
+
+### Patient Capabilities
+
+Patients can:
+- **Book appointments** with physiotherapists
+- **View their appointment history** 
+- **Update personal information**
+- **Cancel their own appointments**
+- **Access their medical history**
+
+### Patient API Endpoints
+
+```javascript
+// src/router/paciente.route.js
+pacienteRouter.post("/", pacienteController.pacienteCreated)
+pacienteRouter.get("/", pacienteController.readPacientes)
+pacienteRouter.post("/update-paciente/:id", pacienteController.updatePaciente)
+```
+
+### Creating a Patient
+
+```javascript
+// Service applies business logic
+export const pacienteService = {
+  async crearPaciente(data) {
+    // Hash password for security
+    data.password = hashedPassword(data.password)
+    
+    // Normalize names to uppercase
+    data.nombre = data.nombre.toUpperCase()
+    data.apellidoPaterno = data.apellidoPaterno.toUpperCase()
+    data.apellidoMaterno = data.apellidoMaterno.toUpperCase()
+    
+    return await pacienteDao.createPaciente(data)
+  }
+}
+```
+
+<Note>
+Passwords are automatically hashed using bcrypt before storage. Names are normalized to uppercase for consistency.
+</Note>
+
+## Fisioterapeuta (Physiotherapist)
+
+### Role Identifier
+
+```javascript
+rol: "fisioterapeuta"
+```
+
+### Physiotherapist-Specific Fields
+
+```javascript
+// src/models/fisioModel.js
+const fisioterapeutaSchema = new mongoose.Schema({
+  especialidad: String,      // Specialization area
+  colegiatura: String,        // Professional license number
+  universidad: String,        // Educational institution
+  descProfesional: String     // Professional bio/description
+});
+
+export const fisioModel = userModel.discriminator("fisioterapeuta", fisioterapeutaSchema);
+```
+
+### Physiotherapist Capabilities
+
+Physiotherapists can:
+- **View all their scheduled appointments**
+- **Confirm or cancel appointments**
+- **Update appointment status** (pendiente → confirmada → completada)
+- **Access patient information** for their appointments
+- **Manage their professional profile**
+
+### Physiotherapist API Endpoints
+
+```javascript
+// src/router/fisio.route.js
+fisioteRouter.post("/", fisioController.fisioCreate)
+fisioteRouter.get("/", fisioController.readFisios)
+fisioteRouter.get("/:id", fisioController.getById)
+fisioteRouter.get("/especialidad/:espe", fisioController.getByEspecialidad)
+```
+
+### Finding Therapist Appointments
+
+```javascript
+// Find all appointments for a specific therapist
+async getCitaIdFisi(terapeutaId) {
+  return await citaModel
+    .find({ terapeuta: terapeutaId })
+    .populate("paciente", "nombre apellidoPaterno apellidoMaterno")
+    .populate("terapeuta", "nombre apellidoPaterno apellidoMaterno")
+}
+```
+
+### Filtering by Specialization
+
+```javascript
+// Find physiotherapists by specialization
+async getByEspecialidad(req, res) {
+  const {espe} = req.params
+  const fisioEspe = await fisioService.getFisioByEspe(espe)
+  logger.info(`[FisioController] find Fisioterapeuta by Especiality: ${espe}`)
+  return res.status(200).json(fisioEspe)
+}
+```
+
+<Tip>
+Specializations allow patients to find therapists with specific expertise (e.g., "Traumatología", "Rehabilitación Deportiva").
+</Tip>
+
+## Admin (Administrator)
+
+### Role Identifier
+
+```javascript
+rol: "admin"
+```
+
+### Admin-Specific Fields
+
+```javascript
+// src/models/adminModel.js
+const adminSchema = mongoose.Schema({
+  cargo: {
+    type: String,
+    enum: ["gerente", "cajero", "recepcionista"]
+  }
+})
+
+export const adminModel = userModel.discriminator("admin", adminSchema)
+```
+
+### Admin Position Types
+
+| Cargo | Translation | Typical Responsibilities |
+|-------|-------------|-------------------------|
+| `gerente` | Manager | Full system access, user management |
+| `cajero` | Cashier | Payment processing, financial records |
+| `recepcionista` | Receptionist | Appointment scheduling, front desk |
+
+### Admin Capabilities
+
+Admins can:
+- **Manage all user accounts** (create, read, update, delete)
+- **View all appointments** across the system
+- **Generate reports** and analytics
+- **Configure system settings**
+- **Handle administrative tasks** based on their `cargo`
+
+### Admin API Endpoints
+
+```javascript
+// src/router/admin.route.js
+adminRouter.post("/", adminController.adminCreate)
+```
+
+## Authentication and Authorization
+
+### JWT Token Generation
+
+When users log in, a JWT token is generated containing their role information:
+
+```javascript
+// src/helpers/jwt.js
+export const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      nombre: user.nombre,
+      apePaterno: user.apellidoPaterno,
+      apeMaterno: user.apellidoMaterno,
+      correo: user.correo,
+      dni: user.dni,
+      rol: user.rol,              // User role included in token
+      cargo: user.cargo,          // Admin position if applicable
+      celular: user.celular,
+      especialidad: user.especialidad
+    },
+    Secret_Key,
+    { expiresIn: "1h" }
+  )
+}
+```
+
+<Warning>
+JWT tokens expire after 1 hour. Clients must re-authenticate or implement token refresh logic.
+</Warning>
+
+### Token Verification Middleware
+
+The `verifyToken` middleware validates JWT tokens on protected routes:
+
+```javascript
+// src/helpers/jwt.js
+export const verifyToken = (req, res, next) => {
+  const header = req.headers["authorization"]
+  
+  if(!header) {
+    return res.status(403).json({ error: "Token requerido" })
+  }
+  
+  const token = header.split(" ")[1]
+  
+  try {
+    const decoded = jwt.verify(token, Secret_Key)
+    req.user = decoded  // Attach user data to request
+  } catch(err) {
+    return res.status(401).json({ error: "Token invalido o expirado"})
+  }
+  
+  next()
+}
+```
+
+### Admin-Only Middleware
+
+The `isAdmin` middleware restricts access to admin-only endpoints:
+
+```javascript
+// src/helpers/jwt.js
+export const isAdmin = (req, res, next) => {
+  if (req.user.rol !== "admin" && req.user.cargo !== "gerente") {
+    logger.warn("[jwt] Required role admin and gerente", req.user)
+    return res.status(403).json({ 
+      message: "Acceso denegado: se requiere rol administrador" 
+    });
+  }
+  next();
+};
+```
+
+<Info>
+Access is granted to users with `rol === "admin"` OR `cargo === "gerente"`. This allows manager-level admins to access administrative functions.
+</Info>
+
+### Protecting Routes
+
+Combine middleware to protect routes:
+
+```javascript
+import { verifyToken, isAdmin } from "../helpers/jwt.js"
+
+// Public route - no authentication
+authRouter.post("/login", authController.login)
+
+// Protected route - authentication required
+pacienteRouter.get("/", verifyToken, pacienteController.readPacientes)
+
+// Admin-only route - authentication + authorization
+adminRouter.post("/", verifyToken, isAdmin, adminController.adminCreate)
+```
+
+## Login Flow
+
+<Steps>
+  <Step title="User submits credentials">
+    Client sends `POST /auth/login` with email and password
+  </Step>
+  
+  <Step title="User lookup">
+    System finds user by email: `userModel.findOne({correo: body.correo})`
+  </Step>
+  
+  <Step title="Password validation">
+    Password is validated using bcrypt: `validatePassword(body.password, userFind.password)`
+  </Step>
+  
+  <Step title="Token generation">
+    JWT token is generated with user data including `rol` field
+  </Step>
+  
+  <Step title="Token returned">
+    Client receives token and stores it for subsequent requests
+  </Step>
+  
+  <Step title="Authenticated requests">
+    Client includes token in `Authorization: Bearer <token>` header
+  </Step>
+</Steps>
+
+### Login Controller
+
+```javascript
+// src/controller/auth.controller.js
+export const authController = {
+  async login(req, res) {
+    try {
+      const body = req.body
+      const userFind = await userModel.findOne({correo: body.correo})
+      
+      if(!userFind) {
+        return res.status(404).json({ error: "USER NOT FOUND" })
+      }
+      
+      if(!validatePassword(body.password, userFind.password)) {
+        return res.status(404).json({ error: "PASSWORD INCORRECT" })
+      }
+      
+      const token = generateToken(userFind)
+      return res.status(200).json(token)
+    } catch (e) {
+      console.log({err: e.message})
+    }
+  }
+}
+```
+
+## Social Authentication
+
+The API also supports social login:
+
+### Google Authentication (Firebase)
+
+```javascript
+async loginGoogle(req, res) {
+  const { idToken } = req.body;
+  
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid, email, displayName, photoURL } = decodedToken;
+    
+    let user = await userModel.findOne({ firebaseUID: uid });
+    
+    if (!user) {
+      user = await userModel.create({ 
+        firebaseUID: uid, 
+        email, 
+        name: displayName, 
+        photo: photoURL, 
+        password: `${uid}-token`, 
+        dni: `google-${uid}` 
+      });
+    }
+    
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.json({ token });
+  } catch (error) {
+    res.status(401).json({ message: 'Token inválido' });
+  }
+}
+```
+
+### Facebook Authentication (Passport.js)
+
+```javascript
+// src/router/auth.route.js
+authRouter.get("/facebook", 
+  passport.authenticate("facebook", {scope: ["email"]})
+)
+
+authRouter.get("/facebook/callback", 
+  passport.authenticate("facebook", {
+    failureRedirect: "/login",
+    successRedirect: "/profile"
+  })
+)
+```
+
+## Role-Based Data Access
+
+Different roles have different data access patterns:
+
+### Patients Access Their Own Data
+
+```javascript
+// Get appointments for the logged-in patient
+const patientAppointments = await citaModel
+  .find({ paciente: req.user.id })
+  .populate("terapeuta", "nombre especialidad")
+```
+
+### Therapists Access Their Appointments
+
+```javascript
+// Get appointments assigned to the logged-in therapist
+const therapistAppointments = await citaModel
+  .find({ terapeuta: req.user.id })
+  .populate("paciente", "nombre historialMedico")
+```
+
+### Admins Access All Data
+
+```javascript
+// Get all appointments (admin only)
+const allAppointments = await citaModel
+  .find()
+  .populate("paciente")
+  .populate("terapeuta")
+```
+
+## Role Comparison Matrix
+
+| Capability | Paciente | Fisioterapeuta | Admin |
+|------------|----------|----------------|-------|
+| Create own appointment | ✅ | ❌ | ✅ |
+| View own appointments | ✅ | ✅ | ✅ |
+| View all appointments | ❌ | ❌ | ✅ |
+| Update appointment status | ❌ | ✅ | ✅ |
+| Create users | ❌ | ❌ | ✅ |
+| View patient medical history | ❌ | ✅* | ✅ |
+| Manage system settings | ❌ | ❌ | ✅ |
+
+<Note>
+*Physiotherapists can only view medical history for their assigned patients.
+</Note>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Principle of Least Privilege" icon="lock">
+    Grant users only the permissions they need for their role
+  </Card>
+  
+  <Card title="Validate on Backend" icon="server">
+    Always verify roles server-side, never trust client-side checks
+  </Card>
+  
+  <Card title="Audit Logging" icon="file-lines">
+    Log all role-based access for security and compliance
+  </Card>
+  
+  <Card title="Token Security" icon="shield-halved">
+    Use HTTPS, short expiration times, and secure token storage
+  </Card>
+</CardGroup>
+
+<Warning>
+**Never expose sensitive data**: Always filter fields when sending user data to clients. Never send password hashes or tokens.
+</Warning>
+
+<Check>
+**Multi-factor authentication**: Consider implementing MFA for admin accounts for additional security.
+</Check>

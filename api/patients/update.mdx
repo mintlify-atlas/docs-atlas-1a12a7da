@@ -1,0 +1,187 @@
+---
+title: "Update Patient"
+api: "POST /api/paciente/update-paciente/:id"
+description: "Update an existing patient's information by their ID"
+---
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the patient to update
+</ParamField>
+
+## Request Body
+
+All fields are optional. Only include the fields you want to update.
+
+<ParamField body="nombre" type="string">
+  Patient's first name
+</ParamField>
+
+<ParamField body="apellidoPaterno" type="string">
+  Patient's paternal last name
+</ParamField>
+
+<ParamField body="apellidoMaterno" type="string">
+  Patient's maternal last name
+</ParamField>
+
+<ParamField body="dni" type="string">
+  Patient's national identification number (DNI). Must be unique.
+</ParamField>
+
+<ParamField body="cumpleanios" type="string">
+  Patient's date of birth
+</ParamField>
+
+<ParamField body="genero" type="string">
+  Patient's gender
+</ParamField>
+
+<ParamField body="img" type="string">
+  URL or path to patient's profile image
+</ParamField>
+
+<ParamField body="celular" type="string">
+  Patient's phone number
+</ParamField>
+
+<ParamField body="direccion" type="string">
+  Patient's address
+</ParamField>
+
+<ParamField body="correo" type="string">
+  Patient's email address. Must be unique.
+</ParamField>
+
+<ParamField body="password" type="string">
+  Patient's password for authentication
+</ParamField>
+
+<ParamField body="estado" type="string">
+  Patient's account status. Possible values: `activo`, `inactivo`
+</ParamField>
+
+<ParamField body="historialMedico" type="string[]">
+  Array of medical history entries for the patient
+</ParamField>
+
+<ParamField body="alergias" type="string[]">
+  Array of known allergies for the patient
+</ParamField>
+
+## Response
+
+<ResponseField name="_id" type="string">
+  Unique identifier for the updated patient
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Patient's first name
+</ResponseField>
+
+<ResponseField name="apellidoPaterno" type="string">
+  Patient's paternal last name
+</ResponseField>
+
+<ResponseField name="apellidoMaterno" type="string">
+  Patient's maternal last name
+</ResponseField>
+
+<ResponseField name="dni" type="string">
+  Patient's national identification number
+</ResponseField>
+
+<ResponseField name="cumpleanios" type="string">
+  Patient's date of birth
+</ResponseField>
+
+<ResponseField name="genero" type="string">
+  Patient's gender
+</ResponseField>
+
+<ResponseField name="img" type="string">
+  URL or path to patient's profile image
+</ResponseField>
+
+<ResponseField name="celular" type="string">
+  Patient's phone number
+</ResponseField>
+
+<ResponseField name="direccion" type="string">
+  Patient's address
+</ResponseField>
+
+<ResponseField name="correo" type="string">
+  Patient's email address
+</ResponseField>
+
+<ResponseField name="estado" type="string">
+  Patient's account status
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User role, always set to `paciente` for patients
+</ResponseField>
+
+<ResponseField name="historialMedico" type="string[]">
+  Array of medical history entries
+</ResponseField>
+
+<ResponseField name="alergias" type="string[]">
+  Array of known allergies
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.example.com/api/paciente/update-paciente/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "celular": "+51999888777",
+    "direccion": "Av. Nueva 789, Lima",
+    "historialMedico": [
+      "Fractura de tobillo en 2018",
+      "Cirugía de menisco en 2020",
+      "Rehabilitación post-quirúrgica completada en 2021"
+    ],
+    "alergias": [
+      "Penicilina",
+      "Polen",
+      "Látex"
+    ]
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "nombre": "Juan",
+  "apellidoPaterno": "García",
+  "apellidoMaterno": "López",
+  "dni": "12345678",
+  "cumpleanios": "1990-05-15",
+  "genero": "Masculino",
+  "celular": "+51999888777",
+  "direccion": "Av. Nueva 789, Lima",
+  "correo": "juan.garcia@example.com",
+  "estado": "activo",
+  "rol": "paciente",
+  "historialMedico": [
+    "Fractura de tobillo en 2018",
+    "Cirugía de menisco en 2020",
+    "Rehabilitación post-quirúrgica completada en 2021"
+  ],
+  "alergias": [
+    "Penicilina",
+    "Polen",
+    "Látex"
+  ]
+}
+```
+
+</ResponseExample>

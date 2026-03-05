@@ -1,0 +1,137 @@
+---
+title: "List Patients"
+api: "GET /api/paciente"
+description: "Retrieve a list of all patients in the system"
+---
+
+## Description
+
+This endpoint retrieves all users with the role of `paciente` (patient) from the system. It returns an array of patient objects containing their complete information including medical history and allergies.
+
+## Response
+
+Returns an array of patient objects.
+
+<ResponseField name="patients" type="array">
+  Array of patient objects
+  
+  <Expandable title="Patient Object">
+    <ResponseField name="_id" type="string">
+      Unique identifier for the patient
+    </ResponseField>
+
+    <ResponseField name="nombre" type="string">
+      Patient's first name
+    </ResponseField>
+
+    <ResponseField name="apellidoPaterno" type="string">
+      Patient's paternal last name
+    </ResponseField>
+
+    <ResponseField name="apellidoMaterno" type="string">
+      Patient's maternal last name
+    </ResponseField>
+
+    <ResponseField name="dni" type="string">
+      Patient's national identification number
+    </ResponseField>
+
+    <ResponseField name="cumpleanios" type="string">
+      Patient's date of birth
+    </ResponseField>
+
+    <ResponseField name="genero" type="string">
+      Patient's gender
+    </ResponseField>
+
+    <ResponseField name="img" type="string">
+      URL or path to patient's profile image
+    </ResponseField>
+
+    <ResponseField name="celular" type="string">
+      Patient's phone number
+    </ResponseField>
+
+    <ResponseField name="direccion" type="string">
+      Patient's address
+    </ResponseField>
+
+    <ResponseField name="correo" type="string">
+      Patient's email address
+    </ResponseField>
+
+    <ResponseField name="estado" type="string">
+      Patient's account status (activo/inactivo)
+    </ResponseField>
+
+    <ResponseField name="rol" type="string">
+      User role, always set to `paciente` for patients
+    </ResponseField>
+
+    <ResponseField name="historialMedico" type="string[]">
+      Array of medical history entries
+    </ResponseField>
+
+    <ResponseField name="alergias" type="string[]">
+      Array of known allergies
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.example.com/api/paciente \
+  -H "Content-Type: application/json"
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "Juan",
+    "apellidoPaterno": "García",
+    "apellidoMaterno": "López",
+    "dni": "12345678",
+    "cumpleanios": "1990-05-15",
+    "genero": "Masculino",
+    "celular": "+51987654321",
+    "direccion": "Av. Principal 123, Lima",
+    "correo": "juan.garcia@example.com",
+    "estado": "activo",
+    "rol": "paciente",
+    "historialMedico": [
+      "Fractura de tobillo en 2018",
+      "Cirugía de menisco en 2020"
+    ],
+    "alergias": [
+      "Penicilina",
+      "Polen"
+    ]
+  },
+  {
+    "_id": "507f1f77bcf86cd799439012",
+    "nombre": "María",
+    "apellidoPaterno": "Rodríguez",
+    "apellidoMaterno": "Sánchez",
+    "dni": "87654321",
+    "cumpleanios": "1985-08-22",
+    "genero": "Femenino",
+    "celular": "+51912345678",
+    "direccion": "Jr. Los Alamos 456, Lima",
+    "correo": "maria.rodriguez@example.com",
+    "estado": "activo",
+    "rol": "paciente",
+    "historialMedico": [
+      "Escoliosis leve diagnosticada en 2015"
+    ],
+    "alergias": []
+  }
+]
+```
+
+</ResponseExample>

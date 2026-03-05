@@ -1,0 +1,175 @@
+---
+title: 'Create Appointment'
+api: 'POST /api/cita'
+description: 'Create a new appointment for a patient with a therapist'
+---
+
+This endpoint creates a new appointment and sends a confirmation email to the administrator.
+
+## Request Body
+
+<ParamField body="paciente" type="string" required>
+  Patient ID (MongoDB ObjectId)
+</ParamField>
+
+<ParamField body="terapeuta" type="string" required>
+  Therapist ID (MongoDB ObjectId)
+</ParamField>
+
+<ParamField body="fecha" type="string" required>
+  Appointment date in ISO 8601 format (e.g., "2026-03-15")
+</ParamField>
+
+<ParamField body="hora" type="string" required>
+  Appointment time (e.g., "14:30")
+</ParamField>
+
+<ParamField body="motivo" type="string">
+  Reason for the appointment
+</ParamField>
+
+<ParamField body="precio" type="number" default="60">
+  Appointment price in Soles (S/)
+</ParamField>
+
+<ParamField body="estado" type="string" default="pendiente">
+  Appointment status. Possible values: `pendiente`, `confirmada`, `cancelada`, `completada`
+</ParamField>
+
+## Response
+
+<ResponseField name="_id" type="string">
+  Unique appointment identifier
+</ResponseField>
+
+<ResponseField name="paciente" type="object">
+  Patient information (populated)
+  <ResponseField name="_id" type="string">
+    Patient ID
+  </ResponseField>
+  <ResponseField name="nombre" type="string">
+    Patient first name
+  </ResponseField>
+  <ResponseField name="apellidoPaterno" type="string">
+    Patient paternal surname
+  </ResponseField>
+  <ResponseField name="apellidoMaterno" type="string">
+    Patient maternal surname
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="terapeuta" type="object">
+  Therapist information (populated)
+  <ResponseField name="_id" type="string">
+    Therapist ID
+  </ResponseField>
+  <ResponseField name="nombre" type="string">
+    Therapist first name
+  </ResponseField>
+  <ResponseField name="apellidoPaterno" type="string">
+    Therapist paternal surname
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="fecha" type="string">
+  Appointment date
+</ResponseField>
+
+<ResponseField name="hora" type="string">
+  Appointment time
+</ResponseField>
+
+<ResponseField name="motivo" type="string">
+  Reason for the appointment
+</ResponseField>
+
+<ResponseField name="precio" type="number">
+  Appointment price
+</ResponseField>
+
+<ResponseField name="estado" type="string">
+  Appointment status
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.fisioterapia.com/api/cita \
+  -H "Content-Type: application/json" \
+  -d '{
+    "paciente": "507f1f77bcf86cd799439011",
+    "terapeuta": "507f1f77bcf86cd799439012",
+    "fecha": "2026-03-15",
+    "hora": "14:30",
+    "motivo": "Terapia de rehabilitación",
+    "precio": 60,
+    "estado": "pendiente"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.fisioterapia.com/api/cita', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    paciente: '507f1f77bcf86cd799439011',
+    terapeuta: '507f1f77bcf86cd799439012',
+    fecha: '2026-03-15',
+    hora: '14:30',
+    motivo: 'Terapia de rehabilitación',
+    precio: 60,
+    estado: 'pendiente'
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.fisioterapia.com/api/cita',
+    json={
+        'paciente': '507f1f77bcf86cd799439011',
+        'terapeuta': '507f1f77bcf86cd799439012',
+        'fecha': '2026-03-15',
+        'hora': '14:30',
+        'motivo': 'Terapia de rehabilitación',
+        'precio': 60,
+        'estado': 'pendiente'
+    }
+)
+
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "_id": "507f1f77bcf86cd799439013",
+  "paciente": {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "Juan",
+    "apellidoPaterno": "Pérez",
+    "apellidoMaterno": "García"
+  },
+  "terapeuta": {
+    "_id": "507f1f77bcf86cd799439012",
+    "nombre": "María",
+    "apellidoPaterno": "López"
+  },
+  "fecha": "2026-03-15T00:00:00.000Z",
+  "hora": "14:30",
+  "motivo": "Terapia de rehabilitación",
+  "precio": 60,
+  "estado": "pendiente"
+}
+```
+
+</ResponseExample>

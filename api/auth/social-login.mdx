@@ -1,0 +1,247 @@
+---
+title: 'Social Login'
+api: 'POST /auth/login-social'
+description: 'Authenticate users via Google Firebase authentication'
+---
+
+## Overview
+
+The social login endpoints enable authentication through third-party providers. Currently supported:
+- **Google Login**: Via Firebase Authentication (POST `/auth/login-social`)
+- **Facebook Login**: Via Passport.js OAuth flow (GET `/auth/facebook`)
+
+## Google Social Login
+
+### Endpoint: POST /auth/login-social
+
+Authenticates users using a Google Firebase ID token. If the user doesn't exist in the database, a new user account is automatically created.
+
+### Request
+
+<ParamField body="idToken" type="string" required>
+  Firebase ID token obtained from Google Sign-In on the client side
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X POST https://api.fisioterapia.com/auth/login-social \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ..."
+  }'
+```
+
+```json Request Body
+{
+  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZmlzaW90ZXJhcGlhLWFwcCIsImF1ZCI6ImZpc2lvdGVyYXBpYS1hcHAiLCJhdXRoX3RpbWUiOjE3MDk2NDAwMDAsInVzZXJfaWQiOiJhYmNkZWYxMjM0NTYiLCJzdWIiOiJhYmNkZWYxMjM0NTYiLCJpYXQiOjE3MDk2NDAwMDAsImV4cCI6MTcwOTY0MzYwMCwiZW1haWwiOiJ1c3VhcmlvQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTEyMzQ1Njc4OTBhYmNkZWYiXSwiZW1haWwiOlsidXN1YXJpb0BnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.signature"
+}
+```
+
+### Response
+
+#### Success Response (200 OK)
+
+Returns a JWT token for the authenticated user.
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0N2FiYzEyMzQ1Njc4OTBhYmNkZWYwMSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzA5NjQwMDAwLCJleHAiOjE3MTAyNDQ4MDB9.signature"
+}
+```
+
+<ResponseField name="token" type="string">
+  JWT token containing the user's ID and role, valid for 7 days
+</ResponseField>
+
+### Token Payload
+
+The JWT token for social login contains:
+
+<ResponseField name="id" type="string">
+  User's unique identifier (MongoDB ObjectId)
+</ResponseField>
+
+<ResponseField name="role" type="string">
+  User's role in the system (defaults to the user's assigned role)
+</ResponseField>
+
+<ResponseField name="iat" type="number">
+  Token issued at timestamp (Unix timestamp)
+</ResponseField>
+
+<ResponseField name="exp" type="number">
+  Token expiration timestamp (7 days from issuance)
+</ResponseField>
+
+### Error Responses
+
+#### Invalid Token (401)
+
+Returned when the Firebase ID token is invalid, expired, or cannot be verified.
+
+```json
+{
+  "message": "Token inválido"
+}
+```
+
+### Authentication Flow
+
+1. **Client Authentication**: User signs in with Google on the client side and obtains a Firebase ID token
+2. **Token Verification**: The server verifies the ID token with Firebase Admin SDK
+3. **User Extraction**: Extracts user information from the decoded token (uid, email, displayName, photoURL)
+4. **User Lookup**: Searches for an existing user with the Firebase UID
+5. **User Creation**: If no user exists, creates a new user with:
+   - `firebaseUID`: Firebase user ID
+   - `email`: User's email from Google
+   - `name`: Display name from Google account
+   - `photo`: Profile photo URL from Google
+   - `password`: Auto-generated password (`{uid}-token`)
+   - `dni`: Auto-generated identifier (`google-{uid}`)
+6. **Token Generation**: Generates a JWT token with the user's ID and role
+7. **Response**: Returns the JWT token with a 200 status code
+
+### User Auto-Creation
+
+When a user logs in with Google for the first time, the following fields are automatically populated:
+
+- **firebaseUID**: Unique Firebase user identifier
+- **email**: Email address from Google account
+- **name**: Display name from Google profile
+- **photo**: Profile picture URL from Google
+- **password**: System-generated password (format: `{uid}-token`)
+- **dni**: System-generated identifier (format: `google-{uid}`)
+- **role**: Default role assigned by the system
+
+---
+
+## Facebook OAuth Login
+
+### Endpoint: GET /auth/facebook
+
+Initiates the Facebook OAuth authentication flow.
+
+<ParamField query="scope" type="string" default="email">
+  OAuth scopes requested from Facebook. Default includes email access.
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X GET https://api.fisioterapia.com/auth/facebook
+```
+
+### Behavior
+
+- Redirects the user to Facebook's authorization page
+- Requests access to the user's email address
+- Uses Passport.js Facebook Strategy for OAuth handling
+
+---
+
+### Endpoint: GET /auth/facebook/callback
+
+Handles the OAuth callback from Facebook after user authorization.
+
+### Query Parameters
+
+<ParamField query="code" type="string">
+  Authorization code provided by Facebook (automatically included)
+</ParamField>
+
+<ParamField query="state" type="string">
+  CSRF protection token (automatically handled by Passport.js)
+</ParamField>
+
+### Request Example
+
+```bash cURL
+# This endpoint is called automatically by Facebook
+curl -X GET "https://api.fisioterapia.com/auth/facebook/callback?code=AQD...&state=xyz"
+```
+
+### Behavior
+
+**Success Flow:**
+- Validates the authorization code with Facebook
+- Creates or retrieves the user account
+- Redirects to `/profile` on successful authentication
+
+**Failure Flow:**
+- Redirects to `/login` if authentication fails
+- Possible failure reasons include:
+  - User denied permission
+  - Invalid authorization code
+  - Network or configuration errors
+
+### Response
+
+This endpoint performs HTTP redirects rather than returning JSON:
+
+- **Success**: Redirects to `/profile`
+- **Failure**: Redirects to `/login`
+
+---
+
+## OAuth Flow Diagram
+
+### Facebook OAuth Flow
+
+1. **Initiation**: Client requests `GET /auth/facebook`
+2. **Redirect**: Server redirects to Facebook authorization page
+3. **User Authorization**: User grants permissions on Facebook
+4. **Callback**: Facebook redirects to `GET /auth/facebook/callback` with authorization code
+5. **Token Exchange**: Server exchanges code for access token with Facebook
+6. **User Creation/Retrieval**: Server creates or retrieves user account
+7. **Session Creation**: Server establishes authenticated session
+8. **Final Redirect**: User is redirected to `/profile` (success) or `/login` (failure)
+
+## Usage Notes
+
+### Google Login
+
+- Tokens expire after 7 days (longer than standard email/password login)
+- Firebase ID tokens must be generated on the client side using Firebase SDK
+- The endpoint automatically handles new user registration
+- User accounts are linked via Firebase UID, not email (allows email changes on Google side)
+
+### Facebook Login
+
+- Requires proper Facebook App configuration with OAuth redirect URIs
+- The callback URL must be registered in Facebook Developer Console
+- Session management is handled through Passport.js
+- Email scope is required for user identification
+
+## Security Considerations
+
+### Google Login
+
+- Firebase Admin SDK verifies token authenticity with Google servers
+- Tokens cannot be forged as they require Google's private key
+- Auto-generated passwords are sufficiently unique (based on Firebase UID)
+- Consider implementing rate limiting to prevent token verification abuse
+
+### Facebook Login
+
+- OAuth state parameter protects against CSRF attacks
+- Redirect URIs must be whitelisted in Facebook app settings
+- Access tokens are handled securely by Passport.js
+- Never expose Facebook App Secret in client-side code
+
+## Integration Requirements
+
+### Google Login Prerequisites
+
+1. Firebase project configured with Google Sign-In enabled
+2. Firebase Admin SDK initialized with service account credentials
+3. Client application integrated with Firebase Authentication SDK
+4. Environment variable `JWT_SECRET` configured for token signing
+
+### Facebook Login Prerequisites
+
+1. Facebook App created in Facebook Developer Console
+2. OAuth redirect URIs configured (`https://yourdomain.com/auth/facebook/callback`)
+3. Passport.js configured with Facebook Strategy
+4. Facebook App ID and App Secret configured in environment variables
+5. Session middleware configured in Express application

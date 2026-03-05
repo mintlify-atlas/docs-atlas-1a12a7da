@@ -1,0 +1,78 @@
+---
+title: 'Delete User'
+api: 'DELETE /api/user/delete-user/:id'
+description: 'Delete a user from the system by their ID'
+---
+
+## Endpoint
+
+```
+DELETE /api/user/delete-user/:id
+```
+
+## Authentication
+
+No authentication required.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the user to delete
+</ParamField>
+
+## Response
+
+Returns the result of the delete operation.
+
+<ResponseField name="acknowledged" type="boolean">
+  Indicates whether the operation was acknowledged
+</ResponseField>
+
+<ResponseField name="deletedCount" type="number">
+  The number of users deleted (0 or 1)
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X DELETE https://api.example.com/api/user/delete-user/507f1f77bcf86cd799439011
+```
+
+## Example Response
+
+### Success (200 OK)
+
+```json
+{
+  "acknowledged": true,
+  "deletedCount": 1
+}
+```
+
+### User Not Found
+
+When the user ID doesn't exist:
+
+```json
+{
+  "acknowledged": true,
+  "deletedCount": 0
+}
+```
+
+## Error Responses
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": "Error interno del servidor"
+}
+```
+
+## Notes
+
+- This operation permanently deletes the user from the database
+- If the user ID is not found, the operation will still return a success response with `deletedCount: 0`
+- There is no confirmation step, so use this endpoint with caution
+- Consider implementing soft deletes (updating the `estado` field to `inactivo`) instead of permanent deletion for data retention purposes

@@ -1,0 +1,297 @@
+---
+title: 'Architecture'
+description: 'Understanding the Fisioterapia Backend API architecture and design patterns'
+---
+
+## Overview
+
+The Fisioterapia Backend API is built using **Express.js** and follows a layered architecture pattern that separates concerns across multiple layers: Routes, Controllers, Services, and DAOs (Data Access Objects). This architecture promotes maintainability, testability, and scalability.
+
+## Application Structure
+
+The main application is configured in `src/app.js`, which sets up the Express server with all necessary middleware and routes.
+
+### Middleware Stack
+
+The application uses a carefully ordered middleware stack:
+
+```javascript
+import express from "express"
+import cors from "cors"
+import morgan from "morgan"
+import passport from "passport"
+import session from "express-session"
+
+export const app = express()
+
+// HTTP request logger
+app.use(
+  morgan("tiny", {
+    stream: {
+      write: (message) => logger.http(message.trim()),
+    },
+  })
+);
+
+// Cross-Origin Resource Sharing
+app.use(cors())
+
+// Request body parsing
+app.use(express.json())
+app.use(express.urlenced({ extended: true }))
+
+// Static file serving
+app.use(express.static("public"))
+
+// Session management
+app.use(session({ 
+  secret: "tuSecreto", 
+  resave: false, 
+  saveUninitialized: false 
+}));
+
+// Passport authentication
+app.use(passport.initialize());
+app.use(passport.session());
+```
+
+<Info>
+The middleware order is critical. Authentication middleware (session, passport) must come after body parsing but before route handlers.
+</Info>
+
+### Routing Structure
+
+Routes are organized by resource type and mounted on specific base paths:
+
+```javascript
+app.use("/api/user", usuarioRouter)
+app.use("/api/admin", adminRouter)
+app.use("/api/fisioterapeuta", fisioteRouter)
+app.use("/api/paciente", pacienteRouter)
+app.use("/auth", authRouter)
+app.use("/api/contacto", contactoRouter)
+app.use("/api/cita", citaRouter)
+```
+
+| Route Base | Purpose | Example Endpoints |
+|------------|---------|------------------|
+| `/api/user` | General user operations | User management |
+| `/api/admin` | Admin-specific operations | `POST /api/admin/` |
+| `/api/fisioterapeuta` | Physiotherapist operations | `GET /api/fisioterapeuta/`, `GET /api/fisioterapeuta/:id` |
+| `/api/paciente` | Patient operations | `GET /api/paciente/`, `POST /api/paciente/update-paciente/:id` |
+| `/auth` | Authentication endpoints | `POST /auth/login`, `POST /auth/login-social` |
+| `/api/cita` | Appointment management | `POST /api/cita/`, `GET /api/cita/:id` |
+| `/api/contacto` | Contact form operations | Contact submissions |
+
+## Layered Architecture Pattern
+
+The application follows a four-layer architecture:
+
+### 1. Router Layer
+
+Routers define HTTP endpoints and map them to controller methods.
+
+```javascript
+// src/router/paciente.route.js
+import { Router } from "express";
+import { pacienteController } from "../controller/paciente.controller.js";
+
+export const pacienteRouter = Router()
+
+pacienteRouter.post("/", pacienteController.pacienteCreated)
+pacienteRouter.get("/", pacienteController.readPacientes)
+pacienteRouter.post("/update-paciente/:id", pacienteController.updatePaciente)
+```
+
+### 2. Controller Layer
+
+Controllers handle HTTP request/response logic, validate input, and coordinate with services.
+
+```javascript
+// src/controller/paciente.controller.js
+export const pacienteController = {
+  async pacienteCreated(req, res) {
+    try {
+      const body = req.body
+      const pacienteCreate = await pacienteService.crearPaciente(body)
+      return res.status(200).json(pacienteCreate)
+    } catch(e) {
+      console.log(`Error ${e.message}`)
+    }
+  },
+
+  async readPacientes(req, res) {
+    try {
+      const pacientes = await usuarioService.leerUsuarioRol("paciente")
+      logger.info("[PacienteController] find pacientes")
+      return res.status(200).json(pacientes)
+    } catch(e) {
+      console.log(`Error ${e.message}`)
+    }
+  }
+}
+```
+
+<Note>
+Controllers should remain thin, delegating business logic to the service layer.
+</Note>
+
+### 3. Service Layer
+
+Services contain business logic, data transformation, and orchestrate DAO operations.
+
+```javascript
+// src/service/paciente.service.js
+import { pacienteDao } from "../DAO/pacienteDao.js"
+import { hashedPassword } from "../utils/bcrypt.js"
+
+export const pacienteService = {
+  async crearPaciente(data) {
+    // Hash password
+    data.password = hashedPassword(data.password)
+    
+    // Transform data
+    data.nombre = data.nombre.toUpperCase()
+    data.apellidoPaterno = data.apellidoPaterno.toUpperCase()
+    data.apellidoMaterno = data.apellidoMaterno.toUpperCase()
+    
+    return await pacienteDao.createPaciente(data)
+  },
+
+  async updatePaciente(id, data) {
+    return await pacienteDao.updPaciente(id, data)
+  }
+}
+```
+
+### 4. DAO Layer (Data Access Object)
+
+DAOs handle direct database interactions using Mongoose models.
+
+```javascript
+// src/DAO/pacienteDao.js
+import { pacienteModel } from "../models/pacienteModel.js"
+
+export const pacienteDao = {
+  async createPaciente(data) {
+    return await pacienteModel.create(data)
+  },
+
+  async getPacienteDni(dnis) {
+    return await pacienteModel.findOne({dni: dnis})
+  },
+
+  async updPaciente(pacienteId, data) {
+    return await pacienteModel.findByIdAndUpdate(
+      {_id: pacienteId}, 
+      {$set: data}
+    )
+  }
+}
+```
+
+## Authentication Flow
+
+The API supports multiple authentication strategies:
+
+### JWT-based Authentication
+
+```javascript
+// src/controller/auth.controller.js
+export const authController = {
+  async login(req, res) {
+    const body = req.body
+    const userFind = await userModel.findOne({correo: body.correo})
+    
+    if(!userFind) {
+      return res.status(404).json({ error: "USER NOT FOUND" })
+    }
+    
+    if(!validatePassword(body.password, userFind.password)) {
+      return res.status(404).json({ error: "PASSWORD INCORRECT" })
+    }
+    
+    const token = generateToken(userFind)
+    return res.status(200).json(token)
+  }
+}
+```
+
+### Social Authentication
+
+The API supports OAuth authentication via:
+- **Google** (Firebase-based)
+- **Facebook** (Passport.js)
+
+```javascript
+// Facebook OAuth routes
+authRouter.get("/facebook", passport.authenticate("facebook", {scope: ["email"]}))
+authRouter.get("/facebook/callback", passport.authenticate("facebook", {
+  failureRedirect: "/login",
+  successRedirect: "/profile"
+}))
+```
+
+## Data Flow Example
+
+Here's how a typical request flows through the architecture:
+
+<Steps>
+  <Step title="Request received">
+    Client sends `POST /api/paciente/` with patient data
+  </Step>
+  
+  <Step title="Router maps to controller">
+    `pacienteRouter` routes to `pacienteController.pacienteCreated`
+  </Step>
+  
+  <Step title="Controller validates and delegates">
+    Controller extracts request body and calls `pacienteService.crearPaciente()`
+  </Step>
+  
+  <Step title="Service applies business logic">
+    Service hashes password, transforms names to uppercase, calls DAO
+  </Step>
+  
+  <Step title="DAO interacts with database">
+    DAO uses Mongoose model to create patient record in MongoDB
+  </Step>
+  
+  <Step title="Response returned">
+    Data flows back through Service → Controller → Client as JSON
+  </Step>
+</Steps>
+
+## Benefits of This Architecture
+
+<CardGroup cols={2}>
+  <Card title="Separation of Concerns" icon="layer-group">
+    Each layer has a single, well-defined responsibility
+  </Card>
+  
+  <Card title="Testability" icon="vial">
+    Layers can be unit tested independently with mocked dependencies
+  </Card>
+  
+  <Card title="Maintainability" icon="wrench">
+    Changes to one layer rarely require changes to others
+  </Card>
+  
+  <Card title="Reusability" icon="recycle">
+    Services and DAOs can be reused across different controllers
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Warning>
+**Keep layers independent**: Controllers should never directly access DAOs. Always go through the service layer.
+</Warning>
+
+<Tip>
+**Use dependency injection**: Pass dependencies (services, DAOs) as parameters rather than importing them directly for better testability.
+</Tip>
+
+<Check>
+**Consistent error handling**: Implement a centralized error handling middleware to standardize error responses across all endpoints.
+</Check>

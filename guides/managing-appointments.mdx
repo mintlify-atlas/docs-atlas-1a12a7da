@@ -1,0 +1,452 @@
+---
+title: 'Managing Appointments'
+description: 'Complete guide to creating, updating, and managing physiotherapy appointments'
+icon: 'calendar-check'
+---
+
+## Overview
+
+The appointments (citas) system is the core functionality of the Fisioterapia Backend API. This guide covers the complete workflow for managing appointments between patients and physiotherapists.
+
+## Appointment Schema
+
+Appointments are stored in MongoDB using the following schema defined in `src/models/citasModel.js`:
+
+```javascript
+const citaSchema = new mongoose.Schema({
+  paciente: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "paciente",
+    required: true,
+  },
+  fecha: {
+    type: Date,
+    required: true,
+  },
+  hora: {
+    type: String,
+    required: true,
+  },
+  terapeuta: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "fisioterapeuta",
+    required: true,
+  },
+  motivo: {
+    type: String,
+  },
+  precio: {
+    type: Number,
+    default: 60
+  },
+  estado: {
+    type: String,
+    enum: ["pendiente", "confirmada", "cancelada", "completada"],
+    default: "pendiente",
+  },
+});
+```
+
+## Appointment Status Flow
+
+Appointments follow a lifecycle with four possible states:
+
+<Steps>
+  <Step title="pendiente (Pending)">
+    Initial state when an appointment is created. Awaiting confirmation from the physiotherapist or payment verification.
+  </Step>
+  
+  <Step title="confirmada (Confirmed)">
+    Appointment is confirmed and scheduled. Both patient and therapist are committed.
+  </Step>
+  
+  <Step title="cancelada (Cancelled)">
+    Appointment was cancelled by either the patient or therapist.
+  </Step>
+  
+  <Step title="completada (Completed)">
+    Appointment has been completed successfully.
+  </Step>
+</Steps>
+
+## Creating an Appointment
+
+### Endpoint
+
+```http
+POST /api/cita
+```
+
+### Request Body
+
+```json
+{
+  "paciente": "507f1f77bcf86cd799439011",
+  "terapeuta": "507f191e810c19729de860ea",
+  "fecha": "2026-03-15",
+  "hora": "10:00",
+  "motivo": "Dolor lumbar crónico",
+  "precio": 60
+}
+```
+
+### Required Fields
+
+- `paciente` - MongoDB ObjectId of the patient
+- `terapeuta` - MongoDB ObjectId of the physiotherapist
+- `fecha` - Appointment date (ISO 8601 format)
+- `hora` - Appointment time (string format, e.g., "10:00")
+
+### Optional Fields
+
+- `motivo` - Reason for the appointment
+- `precio` - Price (defaults to 60 if not specified)
+- `estado` - Status (defaults to "pendiente")
+
+### Response
+
+```json
+{
+  "_id": "65f8a1b2c3d4e5f6a7b8c9d0",
+  "paciente": {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "JUAN",
+    "apellidoPaterno": "PEREZ",
+    "apellidoMaterno": "GARCIA"
+  },
+  "terapeuta": {
+    "_id": "507f191e810c19729de860ea",
+    "nombre": "MARIA",
+    "apellidoPaterno": "LOPEZ"
+  },
+  "fecha": "2026-03-15T00:00:00.000Z",
+  "hora": "10:00",
+  "motivo": "Dolor lumbar crónico",
+  "precio": 60,
+  "estado": "pendiente"
+}
+```
+
+### Email Notification
+
+<Note>
+When an appointment is created, the system automatically sends an email notification to the administrator using the Resend email service. The email includes appointment details formatted with HTML.
+</Note>
+
+The email notification is sent from `src/controller/cita.controller.js`:
+
+```javascript
+await sendEmail(
+  "lcondori11@hotmail.com",
+  "Cita Confirmada - Centro de Fisioterapia",
+  `<div style="font-family: Arial, sans-serif;">...
+    Paciente: ${cita.paciente.nombre} ${cita.paciente.apellidoPaterno}
+    Terapeuta: ${cita.terapeuta.nombre} ${cita.terapeuta.apellidoPaterno}
+    Fecha: ${new Date(cita.fecha).toLocaleDateString("es-PE", {timeZone: "UTC"})}
+    Hora: ${cita.hora}
+    Monto: S/ ${cita.precio}
+  </div>`
+);
+```
+
+## Listing Appointments
+
+### Get All Appointments
+
+```http
+GET /api/cita
+```
+
+Returns all appointments in the system with populated patient and therapist details.
+
+```json
+[
+  {
+    "_id": "65f8a1b2c3d4e5f6a7b8c9d0",
+    "paciente": {
+      "_id": "507f1f77bcf86cd799439011",
+      "nombre": "JUAN",
+      "apellidoPaterno": "PEREZ"
+    },
+    "terapeuta": {
+      "_id": "507f191e810c19729de860ea",
+      "nombre": "MARIA",
+      "apellidoPaterno": "LOPEZ"
+    },
+    "fecha": "2026-03-15T00:00:00.000Z",
+    "hora": "10:00",
+    "estado": "pendiente"
+  }
+]
+```
+
+### Get Appointments by Therapist
+
+```http
+GET /api/cita/:id
+```
+
+Returns all appointments for a specific physiotherapist.
+
+**Path Parameters:**
+- `id` - Physiotherapist ID (MongoDB ObjectId)
+
+**Example:**
+```bash
+curl http://localhost:8080/api/cita/507f191e810c19729de860ea
+```
+
+### Get Appointments by Patient
+
+```http
+GET /api/cita/paciente/:id
+```
+
+Returns all appointments for a specific patient.
+
+**Path Parameters:**
+- `id` - Patient ID (MongoDB ObjectId)
+
+**Example:**
+```bash
+curl http://localhost:8080/api/cita/paciente/507f1f77bcf86cd799439011
+```
+
+## Updating an Appointment
+
+### Endpoint
+
+```http
+PUT /api/cita/update/:id
+```
+
+### Path Parameters
+
+- `id` - Appointment ID (MongoDB ObjectId)
+
+### Request Body
+
+You can update any of the following fields:
+
+```json
+{
+  "estado": "confirmada",
+  "fecha": "2026-03-16",
+  "hora": "11:00",
+  "motivo": "Dolor lumbar crónico - seguimiento",
+  "precio": 70
+}
+```
+
+### Common Update Scenarios
+
+<Tabs>
+  <Tab title="Confirm Appointment">
+    ```json
+    {
+      "estado": "confirmada"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Cancel Appointment">
+    ```json
+    {
+      "estado": "cancelada"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Complete Appointment">
+    ```json
+    {
+      "estado": "completada"
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Reschedule">
+    ```json
+    {
+      "fecha": "2026-03-20",
+      "hora": "14:00"
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Response
+
+```json
+{
+  "mssg": "Actualizado correctamente",
+  "data": {
+    "_id": "65f8a1b2c3d4e5f6a7b8c9d0",
+    "paciente": "507f1f77bcf86cd799439011",
+    "terapeuta": "507f191e810c19729de860ea",
+    "fecha": "2026-03-16T00:00:00.000Z",
+    "hora": "11:00",
+    "estado": "confirmada",
+    "precio": 70
+  }
+}
+```
+
+## Deleting an Appointment
+
+### Endpoint
+
+```http
+DELETE /api/cita/delete/:id
+```
+
+### Path Parameters
+
+- `id` - Appointment ID (MongoDB ObjectId)
+
+### Response
+
+```json
+{
+  "messg": "cita eliminada por id de paciente",
+  "cita": {
+    "_id": "65f8a1b2c3d4e5f6a7b8c9d0",
+    "paciente": "507f1f77bcf86cd799439011",
+    "estado": "cancelada"
+  }
+}
+```
+
+<Warning>
+Deleting an appointment permanently removes it from the database. Consider updating the status to "cancelada" instead of deleting for audit purposes.
+</Warning>
+
+## Complete Workflow Example
+
+Here's a complete example of the appointment lifecycle:
+
+<Steps>
+  <Step title="Create Appointment">
+    ```bash
+    curl -X POST http://localhost:8080/api/cita \
+      -H "Content-Type: application/json" \
+      -d '{
+        "paciente": "507f1f77bcf86cd799439011",
+        "terapeuta": "507f191e810c19729de860ea",
+        "fecha": "2026-03-15",
+        "hora": "10:00",
+        "motivo": "Rehabilitación de rodilla",
+        "precio": 60
+      }'
+    ```
+    
+    Status: `pendiente`
+    
+    Email notification sent to administrator.
+  </Step>
+  
+  <Step title="Confirm Appointment">
+    After payment verification, update the status:
+    
+    ```bash
+    curl -X PUT http://localhost:8080/api/cita/update/65f8a1b2c3d4e5f6a7b8c9d0 \
+      -H "Content-Type: application/json" \
+      -d '{"estado": "confirmada"}'
+    ```
+    
+    Status: `confirmada`
+  </Step>
+  
+  <Step title="Complete Session">
+    After the physiotherapy session:
+    
+    ```bash
+    curl -X PUT http://localhost:8080/api/cita/update/65f8a1b2c3d4e5f6a7b8c9d0 \
+      -H "Content-Type: application/json" \
+      -d '{"estado": "completada"}'
+    ```
+    
+    Status: `completada`
+  </Step>
+</Steps>
+
+## Implementation Details
+
+The appointment controller is implemented in `src/controller/cita.controller.js`:
+
+```javascript
+export const citaController = {
+  async createCita(req, res) {
+    const body = req.body
+    try {
+      const cita = await citaService.createCita(body)
+      logger.info("Generated cita")
+      
+      // Send email notification
+      await sendEmail(...)
+      
+      return res.status(200).json(cita)
+    } catch(err) {
+      logger.error("Error", err)
+      return res.status(404).json(err.message)
+    }
+  },
+  
+  async verCitas(req, res) { /* List all appointments */ },
+  async getCitaByIdTerapeuta(req, res) { /* Get by therapist */ },
+  async getCitaByIdPaciente(req, res) { /* Get by patient */ },
+  async updateCita(req, res) { /* Update appointment */ },
+  async deleteCitaById(req, res) { /* Delete appointment */ }
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Validate References" icon="check-circle">
+    Always verify that the patient and therapist IDs exist before creating an appointment.
+  </Card>
+  
+  <Card title="Check Availability" icon="calendar">
+    Implement logic to prevent double-booking by checking existing appointments for the same therapist and time.
+  </Card>
+  
+  <Card title="Timezone Handling" icon="clock">
+    Store dates in UTC and convert to local timezone when displaying to users.
+  </Card>
+  
+  <Card title="Audit Trail" icon="list">
+    Consider using status updates instead of deletion to maintain a complete appointment history.
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="404 - Invalid Patient/Therapist ID">
+    Ensure the referenced patient and therapist exist in the database before creating an appointment.
+  </Accordion>
+  
+  <Accordion title="500 - Server Error">
+    Check server logs for detailed error messages. Common causes:
+    - Database connection issues
+    - Invalid data types
+    - Missing required fields
+  </Accordion>
+  
+  <Accordion title="Email Send Failure">
+    If email notification fails, the appointment is still created. Check Resend API credentials and logs.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="User Management" icon="users" href="/guides/user-management">
+    Learn how to create and manage patients and therapists
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/appointments/create">
+    View detailed API documentation for appointment endpoints
+  </Card>
+</CardGroup>

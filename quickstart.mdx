@@ -1,80 +1,282 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quickstart'
+description: 'Get up and running with the Fisioterapia Backend API in minutes'
 ---
 
-## Get started in three steps
+<Note>
+  This guide will help you set up and run the Fisioterapia Backend API locally, configure your environment, and make your first API requests.
+</Note>
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+Before you begin, ensure you have the following installed:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+- Node.js (v16 or higher)
+- npm or yarn package manager
+- MongoDB database (local or cloud instance)
+- Git
 
-### Step 2: Deploy your changes
+## Installation
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Steps>
+  <Step title="Clone the repository">
+    Clone the Fisioterapia Backend API repository to your local machine:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```bash
+    git clone <repository-url>
+    cd backfisio
+    ```
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Install dependencies">
+    Install all required npm packages:
 
-### Step 3: Go live
+    ```bash
+    npm install
+    ```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    <Accordion title="Key dependencies installed">
+      - **express** (v5.1.0) - Web framework
+      - **mongoose** (v8.19.1) - MongoDB ODM
+      - **jsonwebtoken** (v9.0.2) - JWT authentication
+      - **passport** (v0.7.0) - Authentication middleware
+      - **bcrypt** (v6.0.0) - Password hashing
+      - **cors** (v2.8.5) - Cross-origin resource sharing
+      - **dotenv** (v17.2.3) - Environment variable management
+      - **firebase-admin** (v13.6.1) - Firebase authentication
+      - **winston** (v3.18.3) - Logging
+      - **morgan** (v1.10.1) - HTTP request logger
+    </Accordion>
+  </Step>
 
-## Next steps
+  <Step title="Configure environment variables">
+    Create a `.env` file in the root directory with the following variables:
 
-Now that you have your docs running, explore these key features:
+    ```bash .env
+    # Server Configuration
+    PORT=8080
 
-<CardGroup cols={2}>
+    # Database
+    MONGO_URI=mongodb://localhost:27017/fisioterapia
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    # JWT Configuration
+    JSON_KEY=your_secret_jwt_key_here
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    # Firebase (for Google authentication)
+    FIREBASE_PROJECT_ID=your_firebase_project_id
+    FIREBASE_PRIVATE_KEY=your_firebase_private_key
+    FIREBASE_CLIENT_EMAIL=your_firebase_client_email
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    # Facebook OAuth (optional)
+    FACEBOOK_ID=your_facebook_app_id
+    FACEBOOK_SECRET=your_facebook_app_secret
+    ```
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    <Warning>
+      Never commit your `.env` file to version control. Add it to your `.gitignore` file.
+    </Warning>
+  </Step>
 
-</CardGroup>
+  <Step title="Start MongoDB">
+    Ensure your MongoDB instance is running:
+
+    ```bash
+    # If using local MongoDB
+    mongod
+
+    # Or if using MongoDB as a service
+    sudo systemctl start mongod
+    ```
+
+    <Note>
+      You can also use MongoDB Atlas for a cloud-hosted solution. Just update the `MONGO_URI` in your `.env` file with your Atlas connection string.
+    </Note>
+  </Step>
+
+  <Step title="Start the server">
+    Run the development server:
+
+    ```bash
+    # Development mode with auto-reload
+    npm run dev
+
+    # Production mode
+    npm start
+    ```
+
+    You should see output like:
+    ```
+    info: Connected to mongoDB success
+    info: Listening server on Port http://localhost:8080
+    ```
+  </Step>
+</Steps>
+
+## Making Your First API Request
+
+Once the server is running, you can verify it's working by making a simple request:
+
+### Check Server Status
+
+```bash
+curl http://localhost:8080/
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "date": "1/5/2026, 10:30:45 AM",
+  "user": "your-hostname"
+}
+```
+
+### Create Your First User
+
+Create a new user account:
+
+```bash
+curl -X POST http://localhost:8080/api/user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Juan",
+    "apellidoPaterno": "Pérez",
+    "apellidoMaterno": "García",
+    "dni": "12345678",
+    "correo": "juan.perez@example.com",
+    "password": "securePassword123",
+    "celular": "987654321",
+    "genero": "masculino"
+  }'
+```
+
+### Login and Get JWT Token
+
+Authenticate with the credentials you just created:
+
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "correo": "juan.perez@example.com",
+    "password": "securePassword123"
+  }'
+```
+
+**Response:**
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YzFhMmI0ZDNlNGY1ZzZoN2k4ajlrMCIsIm5vbWJyZSI6Ikp1YW4iLCJhcGVQYXRlcm5vIjoiUMOpcmV6IiwiYXBlTWF0ZXJubyI6IkdhcmPDrWEiLCJjb3JyZW8iOiJqdWFuLnBlcmV6QGV4YW1wbGUuY29tIiwiZG5pIjoiMTIzNDU2NzgiLCJyb2wiOiJ1c2VyIiwiY2VsdWxhciI6Ijk4NzY1NDMyMSIsImlhdCI6MTcwNzEzMjg0NSwiZXhwIjoxNzA3MTM2NDQ1fQ.example_signature
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Save this JWT token - you'll need it to make authenticated requests. The token expires after 1 hour.
 </Note>
+
+### Make an Authenticated Request
+
+Use the JWT token to access protected endpoints:
+
+```bash
+curl http://localhost:8080/api/user \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN_HERE"
+```
+
+## API Endpoints Overview
+
+The API is organized into the following main routes:
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    `/auth` - Login, social authentication
+  </Card>
+  <Card title="Users" icon="users">
+    `/api/user` - User management
+  </Card>
+  <Card title="Patients" icon="user-injured">
+    `/api/paciente` - Patient records
+  </Card>
+  <Card title="Physiotherapists" icon="user-doctor">
+    `/api/fisioterapeuta` - Therapist profiles
+  </Card>
+  <Card title="Appointments" icon="calendar">
+    `/api/cita` - Appointment scheduling
+  </Card>
+  <Card title="Administrators" icon="user-shield">
+    `/api/admin` - Admin operations
+  </Card>
+  <Card title="Contact" icon="envelope">
+    `/api/contacto` - Contact form submissions
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how to implement JWT authentication and secure your API requests
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference">
+    Explore all available endpoints and their parameters
+  </Card>
+</CardGroup>
+
+## Project Structure
+
+The backend follows a modular architecture:
+
+```
+src/
+├── app.js                 # Express app configuration
+├── server.js             # Server entry point
+├── config/
+│   ├── passport.js       # Passport.js strategies
+│   └── firebaseAdmin.js  # Firebase admin setup
+├── controller/           # Request handlers
+├── DAO/                  # Data Access Objects
+├── database/
+│   └── connectMongo.js   # MongoDB connection
+├── helpers/
+│   └── jwt.js           # JWT utilities & middleware
+├── models/              # Mongoose schemas
+├── router/              # Route definitions
+├── utils/               # Utility functions
+└── logger.js            # Winston logger configuration
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="MongoDB connection failed">
+    - Verify MongoDB is running: `mongod --version`
+    - Check your `MONGO_URI` in the `.env` file
+    - Ensure MongoDB is accessible on the specified port (default: 27017)
+    - Check MongoDB logs for errors
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    - Change the `PORT` in your `.env` file to a different value
+    - Kill the process using port 8080: `lsof -ti:8080 | xargs kill -9`
+    - Restart the server
+  </Accordion>
+
+  <Accordion title="JWT token invalid or expired">
+    - Tokens expire after 1 hour - request a new token by logging in again
+    - Verify the `JSON_KEY` in your `.env` matches across restarts
+    - Ensure you're sending the token in the correct format: `Bearer <token>`
+  </Accordion>
+
+  <Accordion title="CORS errors">
+    The API uses CORS middleware to allow cross-origin requests. If you encounter CORS issues:
+    - Verify the request origin is allowed
+    - Check that proper headers are being sent
+    - Review CORS configuration in `src/app.js:26`
+  </Accordion>
+</AccordionGroup>
+
+## Support
+
+If you encounter any issues or have questions:
+
+- Check the server logs for detailed error messages
+- Review the Winston logger output for debugging information
+- Ensure all environment variables are properly configured

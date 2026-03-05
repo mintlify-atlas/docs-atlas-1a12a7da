@@ -1,0 +1,498 @@
+---
+title: 'Authentication'
+description: 'Learn how to authenticate users and secure API endpoints with JWT tokens'
+---
+
+<Note>
+  The Fisioterapia Backend API uses JWT (JSON Web Tokens) for stateless authentication, along with Passport.js for social authentication providers like Facebook and Google.
+</Note>
+
+## Authentication Overview
+
+The API implements a multi-strategy authentication system:
+
+- **Local Authentication**: Username/password with JWT tokens
+- **Social Authentication**: Facebook and Google OAuth via Firebase
+- **Token-based Authorization**: Protected routes using JWT middleware
+- **Role-based Access Control**: Admin and manager role verification
+
+## JWT Implementation
+
+The JWT authentication system is implemented in `src/helpers/jwt.js` and provides token generation, verification, and role-based access control.
+
+### JWT Token Structure
+
+Tokens are generated with the following payload:
+
+```javascript
+{
+  id: user._id,
+  nombre: user.nombre,
+  apePaterno: user.apellidoPaterno,
+  apeMaterno: user.apellidoMaterno,
+  correo: user.correo,
+  dni: user.dni,
+  rol: user.rol,
+  cargo: user.cargo,
+  celular: user.celular,
+  especialidad: user.especialidad
+}
+```
+
+<Info>
+  Tokens expire after **1 hour** by default. Users must re-authenticate after expiration.
+</Info>
+
+### Configuration
+
+The JWT secret key is configured via environment variable:
+
+```bash .env
+JSON_KEY=your_secret_jwt_key_here
+```
+
+<Warning>
+  Use a strong, randomly generated secret key in production. Never expose your `JSON_KEY` in public repositories.
+</Warning>
+
+## Authentication Endpoints
+
+### Local Login
+
+Authenticate with email and password to receive a JWT token.
+
+**Endpoint:** `POST /auth/login`
+
+**Request Body:**
+```json
+{
+  "correo": "user@example.com",
+  "password": "yourPassword123"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "correo": "juan.perez@example.com",
+    "password": "securePassword123"
+  }'
+```
+
+**Success Response:**
+```
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1YzFhMmI0ZDNlNGY1ZzZoN2k4ajlrMCIsIm5vbWJyZSI6Ikp1YW4iLCJhcGVQYXRlcm5vIjoiUMOpcmV6IiwiYXBlTWF0ZXJubyI6IkdhcmPDrWEiLCJjb3JyZW8iOiJqdWFuLnBlcmV6QGV4YW1wbGUuY29tIiwiZG5pIjoiMTIzNDU2NzgiLCJyb2wiOiJ1c2VyIiwiY2VsdWxhciI6Ijk4NzY1NDMyMSIsImlhdCI6MTcwNzEzMjg0NSwiZXhwIjoxNzA3MTM2NDQ1fQ.signature
+```
+
+**Error Responses:**
+
+<CodeGroup>
+```json User Not Found (404)
+{
+  "error": "USER NOT FOUND"
+}
+```
+
+```json Incorrect Password (404)
+{
+  "error": "PASSWORD INCORRECT"
+}
+```
+</CodeGroup>
+
+### Google Authentication
+
+Authenticate using Google OAuth via Firebase.
+
+**Endpoint:** `POST /auth/login-social`
+
+**Request Body:**
+```json
+{
+  "idToken": "firebase_id_token_here"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:8080/auth/login-social \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idToken": "your_firebase_id_token"
+  }'
+```
+
+**Success Response:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+<Note>
+  Google authentication creates a new user automatically if the Firebase UID doesn't exist in the database. The user is stored with Firebase UID, email, and display name.
+</Note>
+
+### Facebook Authentication
+
+Authenticate using Facebook OAuth via Passport.js.
+
+**Step 1:** Redirect user to Facebook:
+```
+GET /auth/facebook
+```
+
+**Step 2:** Handle callback:
+```
+GET /auth/facebook/callback
+```
+
+**Configuration:**
+```bash .env
+FACEBOOK_ID=your_facebook_app_id
+FACEBOOK_SECRET=your_facebook_app_secret
+```
+
+The authentication is configured in `src/config/passport.js:4-15` with Facebook Strategy.
+
+## Authentication Middleware
+
+The API provides two middleware functions for protecting routes:
+
+### Token Verification (`verifyToken`)
+
+Verifies the JWT token and extracts user information.
+
+**Implementation:** `src/helpers/jwt.js:30-58`
+
+**Usage:**
+```javascript
+import { verifyToken } from "./helpers/jwt.js";
+
+// Protect a route
+router.get("/protected", verifyToken, (req, res) => {
+  // Access user data from req.user
+  res.json({ user: req.user });
+});
+```
+
+**How it works:**
+
+<Steps>
+  <Step title="Extract token from header">
+    Reads the `Authorization` header and extracts the token:
+    ```javascript
+    const header = req.headers["authorization"]
+    const token = header.split(" ")[1]  // "Bearer <token>"
+    ```
+  </Step>
+
+  <Step title="Verify token">
+    Validates the token using the JWT secret:
+    ```javascript
+    const decoded = jwt.verify(token, Secret_Key)
+    req.user = decoded
+    ```
+  </Step>
+
+  <Step title="Continue or reject">
+    If valid, attaches user data to `req.user` and calls `next()`. If invalid, returns 401 or 403 error.
+  </Step>
+</Steps>
+
+**Error Responses:**
+
+<CodeGroup>
+```json No Token Provided (403)
+{
+  "error": "Token requerido"
+}
+```
+
+```json Invalid/Expired Token (401)
+{
+  "error": "Token invalido o expirado"
+}
+```
+</CodeGroup>
+
+### Admin Authorization (`isAdmin`)
+
+Verifies the user has admin or manager role.
+
+**Implementation:** `src/helpers/jwt.js:60-69`
+
+**Usage:**
+```javascript
+import { verifyToken, isAdmin } from "./helpers/jwt.js";
+
+// Protect admin-only route
+router.get("/admin", verifyToken, isAdmin, (req, res) => {
+  // Only admins and managers can access this
+  res.json({ message: "Admin area" });
+});
+```
+
+**Authorization Logic:**
+```javascript
+if (req.user.rol !== "admin" && req.user.cargo !== "gerente") {
+  return res.status(403).json({ 
+    message: "Acceso denegado: se requiere rol administrador" 
+  });
+}
+```
+
+<Warning>
+  The `isAdmin` middleware must be used **after** `verifyToken` to ensure `req.user` is populated.
+</Warning>
+
+## Making Authenticated Requests
+
+### Basic Authentication Flow
+
+<Steps>
+  <Step title="Login and obtain token">
+    ```bash
+    curl -X POST http://localhost:8080/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{"correo":"user@example.com","password":"pass123"}'
+    ```
+
+    Save the returned token.
+  </Step>
+
+  <Step title="Include token in requests">
+    Add the `Authorization` header with `Bearer` prefix:
+    ```bash
+    curl http://localhost:8080/api/user \
+      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    ```
+  </Step>
+
+  <Step title="Handle token expiration">
+    If you receive a 401 error, the token has expired. Re-authenticate to get a new token.
+  </Step>
+</Steps>
+
+### Authorization Header Format
+
+<Warning>
+  The token **must** be prefixed with `Bearer ` (note the space):
+</Warning>
+
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+**Correct:**
+```bash
+curl -H "Authorization: Bearer eyJhbGciOiJIUz..."
+```
+
+**Incorrect:**
+```bash
+curl -H "Authorization: eyJhbGciOiJIUz..."  # Missing "Bearer "
+curl -H "Authorization: BearereyJhbGciOiJIUz..."  # Missing space
+```
+
+## Protected Route Examples
+
+### Public Routes (No Authentication)
+
+```javascript
+// Create new user
+POST /api/user
+
+// Login
+POST /auth/login
+
+// Password recovery
+POST /api/user/pass-recovery
+
+// Get user by DNI
+GET /api/user/getdni/:dni
+```
+
+### Authenticated Routes (Require JWT)
+
+```javascript
+// List all users (admin only)
+GET /api/user
+Headers: Authorization: Bearer <token>
+
+// Find users by role (admin only)
+GET /api/user/find
+Headers: Authorization: Bearer <token>
+```
+
+**Example Implementation:**
+
+From `src/router/usuario.route.js:8-9`:
+```javascript
+usuarioRouter.get("/", verifyToken, isAdmin, usuarioController.readUsuarios)
+usuarioRouter.get("/find", verifyToken, isAdmin, usuarioController.getByRol)
+```
+
+### Authenticated Request Examples
+
+<CodeGroup>
+```bash List All Users (Admin)
+curl http://localhost:8080/api/user \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```bash Get User Appointments
+curl http://localhost:8080/api/cita/paciente/65c1a2b4d3e4f5 \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```bash Create Appointment
+curl -X POST http://localhost:8080/api/cita \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pacienteId": "65c1a2b4d3e4f5",
+    "fisioterapeutaId": "65c1a2b4d3e4f6",
+    "fecha": "2026-03-10",
+    "hora": "10:00"
+  }'
+```
+</CodeGroup>
+
+## Password Security
+
+Passwords are hashed using bcrypt (v6.0.0) before storage:
+
+```javascript
+import { validatePassword } from "./utils/bcrypt.js";
+
+// Validation during login
+if(!validatePassword(body.password, userFind.password)) {
+  return res.status(404).json({ error: "PASSWORD INCORRECT" });
+}
+```
+
+<Note>
+  Passwords are never stored in plain text. The bcrypt library provides one-way hashing with salt for maximum security.
+</Note>
+
+## Session Management
+
+The API uses Express sessions for Passport.js authentication:
+
+**Configuration:** `src/app.js:33-35`
+```javascript
+app.use(session({ 
+  secret: "tuSecreto", 
+  resave: false, 
+  saveUninitialized: false 
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+```
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Token Storage" icon="database">
+    - Store tokens securely (e.g., httpOnly cookies, secure storage)
+    - Never store tokens in localStorage in production
+    - Clear tokens on logout
+  </Card>
+
+  <Card title="Token Transmission" icon="shield">
+    - Always use HTTPS in production
+    - Include tokens in Authorization header, not URL
+    - Validate token on every protected request
+  </Card>
+
+  <Card title="Password Policies" icon="key">
+    - Enforce strong password requirements
+    - Implement rate limiting on login attempts
+    - Use bcrypt for password hashing
+  </Card>
+
+  <Card title="Token Expiration" icon="clock">
+    - Tokens expire after 1 hour
+    - Implement token refresh mechanism
+    - Handle expired tokens gracefully
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+### Common Authentication Errors
+
+<AccordionGroup>
+  <Accordion title="403 - Token Required">
+    **Cause:** No Authorization header provided
+
+    **Solution:** Include the JWT token in the Authorization header:
+    ```bash
+    curl -H "Authorization: Bearer <token>" <url>
+    ```
+  </Accordion>
+
+  <Accordion title="401 - Token Invalid or Expired">
+    **Cause:** Token is malformed, expired, or signed with wrong secret
+
+    **Solutions:**
+    - Check token hasn't expired (1 hour lifetime)
+    - Verify `JSON_KEY` matches between requests
+    - Request a new token by logging in again
+  </Accordion>
+
+  <Accordion title="403 - Access Denied: Admin Required">
+    **Cause:** User doesn't have admin or manager role
+
+    **Solution:** Ensure the authenticated user has `rol: "admin"` or `cargo: "gerente"` in their token payload
+  </Accordion>
+
+  <Accordion title="404 - User Not Found">
+    **Cause:** Email doesn't exist in database
+
+    **Solution:** Verify the email address or create a new user account
+  </Accordion>
+
+  <Accordion title="404 - Password Incorrect">
+    **Cause:** Password doesn't match stored hash
+
+    **Solution:** Verify the password or use password recovery endpoint
+  </Accordion>
+</AccordionGroup>
+
+## Logging
+
+Authentication events are logged using Winston logger:
+
+```javascript
+// Token generation
+logger.info("[jwt] Token generate")
+
+// Missing token
+logger.warn("Necesitas token")
+
+// Admin access required
+logger.warn("[jwt] Required role admin and gerente", req.user)
+
+// Login failure
+logger.error("[LoginController] USER NOT FOUND")
+logger.error("[LoginController] PASSWORD INCORRECT")
+```
+
+<Info>
+  Check the Winston logs for detailed authentication debugging information.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api-reference">
+    Explore all available endpoints and their authentication requirements
+  </Card>
+  <Card title="User Management" icon="users">
+    Learn how to create and manage user accounts
+  </Card>
+</CardGroup>

@@ -1,0 +1,169 @@
+---
+title: 'Create User'
+api: 'POST /api/user'
+description: 'Create a new user in the system'
+---
+
+## Endpoint
+
+```
+POST /api/user
+```
+
+## Authentication
+
+No authentication required.
+
+## Request Body
+
+<ParamField body="nombre" type="string">
+  User's first name
+</ParamField>
+
+<ParamField body="apellidoPaterno" type="string">
+  User's paternal last name
+</ParamField>
+
+<ParamField body="apellidoMaterno" type="string">
+  User's maternal last name
+</ParamField>
+
+<ParamField body="dni" type="string" required>
+  User's national identification number (DNI). Must be unique.
+</ParamField>
+
+<ParamField body="cumpleanios" type="string">
+  User's birthday
+</ParamField>
+
+<ParamField body="genero" type="string">
+  User's gender
+</ParamField>
+
+<ParamField body="img" type="string">
+  User's profile image URL
+</ParamField>
+
+<ParamField body="celular" type="string">
+  User's phone number
+</ParamField>
+
+<ParamField body="direccion" type="string">
+  User's address
+</ParamField>
+
+<ParamField body="correo" type="string">
+  User's email address. Must be unique.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password
+</ParamField>
+
+<ParamField body="estado" type="string" default="activo">
+  User's status. Allowed values: `activo`, `inactivo`
+</ParamField>
+
+## Response
+
+<ResponseField name="userCreate" type="object">
+  The created user object
+  
+  <ResponseField name="nombre" type="string">
+    User's first name
+  </ResponseField>
+  
+  <ResponseField name="apellidoPaterno" type="string">
+    User's paternal last name
+  </ResponseField>
+  
+  <ResponseField name="apellidoMaterno" type="string">
+    User's maternal last name
+  </ResponseField>
+  
+  <ResponseField name="dni" type="string">
+    User's national identification number
+  </ResponseField>
+  
+  <ResponseField name="cumpleanios" type="string">
+    User's birthday
+  </ResponseField>
+  
+  <ResponseField name="genero" type="string">
+    User's gender
+  </ResponseField>
+  
+  <ResponseField name="img" type="string">
+    User's profile image URL
+  </ResponseField>
+  
+  <ResponseField name="celular" type="string">
+    User's phone number
+  </ResponseField>
+  
+  <ResponseField name="direccion" type="string">
+    User's address
+  </ResponseField>
+  
+  <ResponseField name="correo" type="string">
+    User's email address
+  </ResponseField>
+  
+  <ResponseField name="estado" type="string">
+    User's status (activo or inactivo)
+  </ResponseField>
+  
+  <ResponseField name="_id" type="string">
+    User's unique identifier
+  </ResponseField>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X POST https://api.example.com/api/user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Juan",
+    "apellidoPaterno": "Perez",
+    "apellidoMaterno": "Garcia",
+    "dni": "12345678",
+    "cumpleanios": "1990-01-15",
+    "genero": "masculino",
+    "celular": "+51987654321",
+    "direccion": "Av. Principal 123, Lima",
+    "correo": "juan.perez@example.com",
+    "password": "securePassword123",
+    "estado": "activo"
+  }'
+```
+
+## Example Response
+
+```json
+{
+  "userCreate": {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "Juan",
+    "apellidoPaterno": "Perez",
+    "apellidoMaterno": "Garcia",
+    "dni": "12345678",
+    "cumpleanios": "1990-01-15",
+    "genero": "masculino",
+    "celular": "+51987654321",
+    "direccion": "Av. Principal 123, Lima",
+    "correo": "juan.perez@example.com",
+    "estado": "activo"
+  }
+}
+```
+
+## Error Responses
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": "Error interno del servidor"
+}
+```

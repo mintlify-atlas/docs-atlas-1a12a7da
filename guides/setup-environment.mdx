@@ -1,0 +1,342 @@
+---
+title: 'Environment Setup'
+description: 'Configure your development environment for the Fisioterapia Backend API'
+icon: 'gear'
+---
+
+## Overview
+
+This guide walks you through setting up the Fisioterapia Backend API, including environment variables, database configuration, and server startup.
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- Node.js (v14 or higher)
+- MongoDB (local or cloud instance)
+- npm or yarn package manager
+
+## Installation
+
+<Steps>
+  <Step title="Clone the repository">
+    Clone the project repository to your local machine:
+    
+    ```bash
+    git clone <repository-url>
+    cd backfisio
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    Install all required npm packages:
+    
+    ```bash
+    npm install
+    ```
+    
+    The project uses the following key dependencies:
+    - `express` - Web framework
+    - `mongoose` - MongoDB ODM
+    - `jsonwebtoken` - JWT authentication
+    - `bcrypt` - Password hashing
+    - `passport` - Authentication middleware
+    - `firebase-admin` - Google authentication
+    - `resend` - Email service
+    - `winston` - Logging
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file in the root directory with the required environment variables (see below).
+  </Step>
+
+  <Step title="Start the server">
+    Run the development server:
+    
+    ```bash
+    npm run dev
+    ```
+    
+    Or for production:
+    
+    ```bash
+    npm start
+    ```
+  </Step>
+</Steps>
+
+## Environment Variables
+
+Create a `.env` file in the root of your project with the following variables:
+
+### Database Configuration
+
+```bash
+# MongoDB Connection
+MONGO_URI=mongodb://localhost:27017/fisioterapia
+# Or for MongoDB Atlas:
+# MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/fisioterapia
+```
+
+<Note>
+The `MONGO_URI` variable is used by the database connection module in `src/database/connectMongo.js`.
+</Note>
+
+### Server Configuration
+
+```bash
+# Server Port (defaults to 8080 if not specified)
+PORT=8080
+```
+
+### Authentication Configuration
+
+```bash
+# JWT Secret Key
+JSON_KEY=your_jwt_secret_key_here
+# Note: The code uses JSON_KEY (not JWT_SECRET) as the variable name
+```
+
+<Warning>
+Use a strong, randomly generated secret key for `JSON_KEY` in production. Never commit this to version control.
+</Warning>
+
+### Facebook OAuth Configuration
+
+```bash
+# Facebook OAuth Credentials
+FACEBOOK_ID=your_facebook_app_id
+FACEBOOK_SECRET=your_facebook_app_secret
+```
+
+### Firebase Admin SDK Configuration
+
+For Google authentication, configure Firebase Admin SDK:
+
+```bash
+# Firebase Admin SDK Configuration
+FIREBASE_TYPE=service_account
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_PRIVATE_KEY_ID=your_private_key_id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour_Private_Key_Here\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
+FIREBASE_CLIENT_ID=your_client_id
+FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
+FIREBASE_AUTH_PROVIDER=https://www.googleapis.com/oauth2/v1/certs
+FIREBASE_CLIENT_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk%40your-project.iam.gserviceaccount.com
+```
+
+<Note>
+Replace `\n` with actual newlines in the private key, or keep them escaped as shown above. The code handles both formats.
+</Note>
+
+## Database Setup
+
+### MongoDB Connection
+
+The application uses Mongoose to connect to MongoDB. The connection is established in `src/database/connectMongo.js`:
+
+```javascript
+import mongoose from "mongoose";
+import logger from "../logger.js";
+
+export const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI)
+    logger.info("Connected to mongoDB success")
+  } catch(err) {
+    logger.error("Error connect to mongoDB", err)
+  }
+}
+```
+
+### Database Collections
+
+The application uses the following MongoDB collections:
+
+- `user` - Stores all users (uses discriminator pattern for roles)
+- `cita` - Stores appointments
+- `contacto` - Stores contact form submissions
+
+<Accordion title="User Collection Schema">
+  The user collection uses Mongoose discriminators to handle different user types:
+  
+  - **Base User** - Common fields for all users
+  - **Paciente** - Extends user with medical history and allergies
+  - **Fisioterapeuta** - Extends user with specialty and credentials
+  - **Admin** - Extends user with administrative fields
+  
+  All user types share the same collection but are differentiated by the `rol` field.
+</Accordion>
+
+## Server Startup
+
+The server initialization happens in `src/server.js`:
+
+```javascript
+import dotenv from "dotenv"
+import { app } from "./app.js";
+import { connectDB } from "./database/connectMongo.js";
+import logger from "./logger.js";
+
+dotenv.config()
+
+const PORT = process.env.PORT || 8080
+
+connectDB()
+
+app.listen(PORT, () => {
+  logger.info(`Listening server on Port http://localhost:${PORT}`)  
+})
+```
+
+### Application Configuration
+
+The Express app is configured in `src/app.js` with the following middleware:
+
+```javascript
+import express from "express"
+import cors from "cors"
+import morgan from "morgan"
+import passport from "passport"
+import session from "express-session"
+
+export const app = express()
+
+// Middleware
+app.use(morgan("tiny"))
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(express.static("public"))
+
+// Session configuration
+app.use(session({ 
+  secret: "tuSecreto", 
+  resave: false, 
+  saveUninitialized: false 
+}));
+
+// Passport initialization
+app.use(passport.initialize());
+app.use(passport.session());
+```
+
+## Development vs Production
+
+### Development Mode
+
+Run the server with auto-reload on file changes:
+
+```bash
+npm run dev
+```
+
+This uses `nodemon` to watch for file changes and automatically restart the server.
+
+### Production Mode
+
+Run the server in production:
+
+```bash
+npm start
+```
+
+<Warning>
+In production:
+- Use strong, unique values for `JSON_KEY` and session secrets
+- Enable HTTPS
+- Set appropriate CORS origins instead of allowing all
+- Use environment-specific MongoDB credentials
+- Configure proper logging levels
+</Warning>
+
+## API Routes
+
+The application exposes the following route groups:
+
+- `/api/user` - User management endpoints
+- `/api/admin` - Admin-specific endpoints
+- `/api/fisioterapeuta` - Physiotherapist endpoints
+- `/api/paciente` - Patient endpoints
+- `/auth` - Authentication endpoints
+- `/api/contacto` - Contact form endpoints
+- `/api/cita` - Appointment management endpoints
+
+## Logging
+
+The application uses Winston for logging. Logs include:
+
+- HTTP request logs (via Morgan)
+- Database connection events
+- Authentication events
+- Error tracking
+
+Logs are written to both console and file depending on your Winston configuration in `src/logger.js`.
+
+## Verification
+
+Once the server is running, verify the setup:
+
+```bash
+curl http://localhost:8080/
+```
+
+You should receive a JSON response:
+
+```json
+{
+  "status": "success",
+  "date": "2026-03-05 12:00:00",
+  "user": "hostname"
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="MongoDB Connection Failed">
+    - Verify `MONGO_URI` is correctly set in `.env`
+    - Ensure MongoDB is running (local) or accessible (cloud)
+    - Check network connectivity and firewall rules
+    - Verify MongoDB credentials are correct
+  </Accordion>
+
+  <Accordion title="JWT Token Errors">
+    - Ensure `JSON_KEY` is set in `.env`
+    - The key must be consistent across server restarts
+    - Check that tokens haven't expired (1 hour default)
+  </Accordion>
+
+  <Accordion title="Port Already in Use">
+    - Change the `PORT` in `.env` to an available port
+    - Or stop the process using the current port
+  </Accordion>
+
+  <Accordion title="Firebase/Google Auth Not Working">
+    - Verify all Firebase environment variables are set
+    - Check that private key includes proper newline characters
+    - Ensure Firebase project is properly configured
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Managing Appointments" icon="calendar" href="/guides/managing-appointments">
+    Learn how to create and manage physiotherapy appointments
+  </Card>
+  
+  <Card title="User Management" icon="users" href="/guides/user-management">
+    Understand the user creation and management workflow
+  </Card>
+  
+  <Card title="Social Authentication" icon="facebook" href="/guides/social-authentication">
+    Set up Facebook and Google OAuth integration
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/introduction">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>

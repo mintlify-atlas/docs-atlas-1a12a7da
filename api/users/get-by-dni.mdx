@@ -1,0 +1,118 @@
+---
+title: 'Get User by DNI'
+api: 'GET /api/user/getdni/:dni'
+description: 'Retrieve a user by their DNI (national identification number)'
+---
+
+## Endpoint
+
+```
+GET /api/user/getdni/:dni
+```
+
+## Authentication
+
+No authentication required.
+
+## Path Parameters
+
+<ParamField path="dni" type="string" required>
+  The user's national identification number (DNI)
+</ParamField>
+
+## Response
+
+<ResponseField name="user" type="object">
+  The user object matching the DNI
+  
+  <ResponseField name="_id" type="string">
+    User's unique identifier
+  </ResponseField>
+  
+  <ResponseField name="nombre" type="string">
+    User's first name
+  </ResponseField>
+  
+  <ResponseField name="apellidoPaterno" type="string">
+    User's paternal last name
+  </ResponseField>
+  
+  <ResponseField name="apellidoMaterno" type="string">
+    User's maternal last name
+  </ResponseField>
+  
+  <ResponseField name="dni" type="string">
+    User's national identification number
+  </ResponseField>
+  
+  <ResponseField name="cumpleanios" type="string">
+    User's birthday
+  </ResponseField>
+  
+  <ResponseField name="genero" type="string">
+    User's gender
+  </ResponseField>
+  
+  <ResponseField name="img" type="string">
+    User's profile image URL
+  </ResponseField>
+  
+  <ResponseField name="celular" type="string">
+    User's phone number
+  </ResponseField>
+  
+  <ResponseField name="direccion" type="string">
+    User's address
+  </ResponseField>
+  
+  <ResponseField name="correo" type="string">
+    User's email address
+  </ResponseField>
+  
+  <ResponseField name="estado" type="string">
+    User's status (activo or inactivo)
+  </ResponseField>
+  
+  <ResponseField name="rol" type="string">
+    User's role in the system
+  </ResponseField>
+</ResponseField>
+
+## Example Request
+
+```bash
+curl -X GET https://api.example.com/api/user/getdni/12345678
+```
+
+## Example Response
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "nombre": "JUAN",
+  "apellidoPaterno": "PEREZ",
+  "apellidoMaterno": "GARCIA",
+  "dni": "12345678",
+  "cumpleanios": "1990-01-15",
+  "genero": "masculino",
+  "celular": "+51987654321",
+  "direccion": "Av. Principal 123, Lima",
+  "correo": "juan.perez@example.com",
+  "estado": "activo",
+  "rol": "admin"
+}
+```
+
+## Error Responses
+
+### 404 Not Found
+
+Returned when no user with the specified DNI is found.
+
+### 500 Internal Server Error
+
+```json
+{
+  "error": "Error interno del servidor"
+}
+```

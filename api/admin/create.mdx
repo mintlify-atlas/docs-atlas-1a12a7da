@@ -1,0 +1,200 @@
+---
+title: 'Create Admin User'
+api: 'POST /api/admin'
+description: 'Create a new administrator user in the system'
+---
+
+## Endpoint
+
+```
+POST /api/admin
+```
+
+This endpoint creates a new administrator user with a specific role (gerente, cajero, or recepcionista). The password is automatically hashed before storage.
+
+## Request Body
+
+### User Information
+
+<ParamField body="nombre" type="string" required>
+  First name of the administrator (will be converted to uppercase)
+</ParamField>
+
+<ParamField body="apellidoPaterno" type="string" required>
+  Paternal surname (will be converted to uppercase)
+</ParamField>
+
+<ParamField body="apellidoMaterno" type="string" required>
+  Maternal surname (will be converted to uppercase)
+</ParamField>
+
+<ParamField body="dni" type="string" required>
+  National identification number (must be unique)
+</ParamField>
+
+<ParamField body="cumpleanios" type="string">
+  Date of birth
+</ParamField>
+
+<ParamField body="genero" type="string">
+  Gender of the administrator
+</ParamField>
+
+<ParamField body="img" type="string">
+  Profile image URL
+</ParamField>
+
+<ParamField body="celular" type="string">
+  Mobile phone number
+</ParamField>
+
+<ParamField body="direccion" type="string">
+  Physical address
+</ParamField>
+
+<ParamField body="correo" type="string" required>
+  Email address (must be unique)
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Password (will be hashed automatically)
+</ParamField>
+
+<ParamField body="estado" type="string" default="activo">
+  Account status. Possible values: `activo`, `inactivo`
+</ParamField>
+
+### Admin-Specific Information
+
+<ParamField body="cargo" type="string" required>
+  Administrative role. Possible values:
+  - `gerente` - Manager
+  - `cajero` - Cashier
+  - `recepcionista` - Receptionist
+</ParamField>
+
+## Response
+
+<ResponseField name="_id" type="string">
+  Unique identifier for the admin user
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  First name (in uppercase)
+</ResponseField>
+
+<ResponseField name="apellidoPaterno" type="string">
+  Paternal surname (in uppercase)
+</ResponseField>
+
+<ResponseField name="apellidoMaterno" type="string">
+  Maternal surname (in uppercase)
+</ResponseField>
+
+<ResponseField name="dni" type="string">
+  National identification number
+</ResponseField>
+
+<ResponseField name="cumpleanios" type="string">
+  Date of birth
+</ResponseField>
+
+<ResponseField name="genero" type="string">
+  Gender
+</ResponseField>
+
+<ResponseField name="img" type="string">
+  Profile image URL
+</ResponseField>
+
+<ResponseField name="celular" type="string">
+  Mobile phone number
+</ResponseField>
+
+<ResponseField name="direccion" type="string">
+  Physical address
+</ResponseField>
+
+<ResponseField name="correo" type="string">
+  Email address
+</ResponseField>
+
+<ResponseField name="password" type="string">
+  Hashed password
+</ResponseField>
+
+<ResponseField name="estado" type="string">
+  Account status (activo/inactivo)
+</ResponseField>
+
+<ResponseField name="cargo" type="string">
+  Administrative role
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User role discriminator (always "admin")
+</ResponseField>
+
+<ResponseField name="__v" type="number">
+  Version key from MongoDB
+</ResponseField>
+
+## Request Example
+
+```bash
+curl -X POST https://api.example.com/api/admin \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "María",
+    "apellidoPaterno": "González",
+    "apellidoMaterno": "López",
+    "dni": "12345678",
+    "cumpleanios": "1990-05-15",
+    "genero": "Femenino",
+    "celular": "987654321",
+    "direccion": "Av. Principal 123, Lima",
+    "correo": "maria.gonzalez@example.com",
+    "password": "SecurePassword123",
+    "cargo": "gerente",
+    "estado": "activo"
+  }'
+```
+
+## Response Example
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "nombre": "MARÍA",
+  "apellidoPaterno": "GONZÁLEZ",
+  "apellidoMaterno": "LÓPEZ",
+  "dni": "12345678",
+  "cumpleanios": "1990-05-15",
+  "genero": "Femenino",
+  "celular": "987654321",
+  "direccion": "Av. Principal 123, Lima",
+  "correo": "maria.gonzalez@example.com",
+  "password": "$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+  "estado": "activo",
+  "cargo": "gerente",
+  "rol": "admin",
+  "__v": 0
+}
+```
+
+## Status Codes
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Admin user created successfully |
+| 400 | Invalid request body or validation error |
+| 409 | Duplicate DNI or email |
+| 500 | Internal server error |
+
+## Notes
+
+- The password is automatically hashed using bcrypt before storage
+- Names (nombre, apellidoPaterno, apellidoMaterno) are automatically converted to uppercase
+- The `dni` and `correo` fields must be unique across all users
+- The `rol` field is automatically set to "admin" by the discriminator
+- Default estado is "activo" if not specified

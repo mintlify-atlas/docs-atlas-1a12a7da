@@ -1,0 +1,284 @@
+---
+title: "Welcome to Fisioterapia Backend API"
+description: "REST API for managing physiotherapy appointments, patients, therapists, and user authentication"
+mode: "custom"
+---
+
+<div className="relative overflow-hidden bg-gradient-to-br from-[#1E40AF] via-[#3B82F6] to-[#60A5FA] dark:from-[#0f1117] dark:via-[#1E40AF] dark:to-[#3B82F6] py-20">
+  <div className="max-w-6xl mx-auto px-6 lg:px-8">
+    <div className="grid lg:grid-cols-12 gap-8 items-center">
+      <div className="lg:col-span-7">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+          Fisioterapia Backend API
+        </h1>
+        <p className="text-lg sm:text-xl text-blue-100 dark:text-gray-300 max-w-2xl mb-8">
+          A complete REST API solution for managing physiotherapy appointments, patient records, therapist profiles, and secure authentication with JWT and social login support.
+        </p>
+        <div className="flex flex-wrap gap-4">
+          <a 
+            href="/quickstart" 
+            className="inline-flex items-center px-6 py-3 bg-white text-[#3B82F6] rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+          >
+            Get Started
+            <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </a>
+          <a 
+            href="/api/auth/login" 
+            className="inline-flex items-center px-6 py-3 border-2 border-white/30 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 hover:border-white/50 transition-colors"
+          >
+            API Reference
+          </a>
+        </div>
+      </div>
+      <div className="lg:col-span-5 hidden lg:block">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#3B82F6] to-[#60A5FA] rounded-2xl blur-2xl opacity-30"></div>
+          <div className="relative bg-[#1a1d27]/80 dark:bg-[#1a1d27] rounded-2xl p-6 border border-white/10">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+            <pre className="text-sm text-gray-300 overflow-x-auto">
+              <code>{`POST /api/cita
+Authorization: Bearer <token>
+
+{
+  "paciente": "507f1f77...",
+  "terapeuta": "507f191e...",
+  "fecha": "2026-03-15",
+  "hora": "10:00",
+  "motivo": "Rehabilitation"
+}`}</code>
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Quick Start</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Get your API up and running in minutes</p>
+  
+  <Steps>
+    <Step title="Clone and Install">
+      Clone the repository and install dependencies:
+      
+      ```bash
+      git clone https://github.com/LuisCondori98/back-fisioterapia.git
+      cd back-fisioterapia
+      npm install
+      ```
+    </Step>
+    
+    <Step title="Configure Environment">
+      Create a `.env` file with your MongoDB connection and JWT secret:
+      
+      ```bash
+      MONGODB_URI=mongodb://localhost:27017/fisioterapia
+      JWT_SECRET=your_secret_key
+      FACEBOOK_ID=your_facebook_app_id
+      FACEBOOK_SECRET=your_facebook_secret
+      ```
+      
+      <Note>See the [Setup Environment](/guides/setup-environment) guide for complete configuration options.</Note>
+    </Step>
+    
+    <Step title="Start the Server">
+      Run the development server:
+      
+      ```bash
+      npm run dev
+      ```
+      
+      The API will be available at `http://localhost:3000`
+    </Step>
+    
+    <Step title="Create Your First User">
+      Make your first API call to create a user:
+      
+      ```bash
+      curl -X POST http://localhost:3000/api/user \
+        -H "Content-Type: application/json" \
+        -d '{
+          "nombre": "Juan",
+          "apellidoPaterno": "Pérez",
+          "apellidoMaterno": "García",
+          "dni": "12345678",
+          "correo": "juan@example.com",
+          "password": "securepassword123",
+          "rol": "paciente"
+        }'
+      ```
+      
+      <Accordion title="Example Response">
+        ```json
+        {
+          "status": "success",
+          "data": {
+            "_id": "507f1f77bcf86cd799439011",
+            "nombre": "Juan",
+            "apellidoPaterno": "Pérez",
+            "correo": "juan@example.com",
+            "rol": "paciente",
+            "estado": "activo"
+          }
+        }
+        ```
+      </Accordion>
+    </Step>
+  </Steps>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Core Features</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Everything you need to build a complete physiotherapy management system</p>
+  
+  <CardGroup cols={2}>
+    <Card title="Appointment Management" icon="calendar-check" href="/guides/managing-appointments">
+      Create, update, and track physiotherapy appointments with flexible scheduling and status management.
+    </Card>
+    <Card title="Authentication & Security" icon="shield-halved" href="/authentication">
+      JWT-based authentication with support for Google and Facebook social login using Passport.js.
+    </Card>
+    <Card title="Role-Based Access" icon="users-gear" href="/concepts/user-roles">
+      Three distinct user roles (Admin, Physiotherapist, Patient) with granular access control.
+    </Card>
+    <Card title="Patient Records" icon="file-medical" href="/api/patients/create">
+      Maintain comprehensive patient profiles including medical history, allergies, and treatment records.
+    </Card>
+    <Card title="Therapist Profiles" icon="user-doctor" href="/api/physiotherapists/create">
+      Manage physiotherapist credentials, specialties, and professional information.
+    </Card>
+    <Card title="MongoDB Integration" icon="database" href="/concepts/data-models">
+      Robust data persistence with Mongoose ODM and discriminator pattern for user hierarchies.
+    </Card>
+  </CardGroup>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Explore by Topic</h2>
+  <p className="text-base text-gray-600 dark:text-gray-400 mb-8">Dive into specific areas of the API</p>
+  
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a href="/concepts/architecture" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#3B82F6] dark:hover:border-[#3B82F6] transition-colors overflow-hidden no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-[#3B82F6]/10 flex items-center justify-center">
+            <svg className="w-6 h-6 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Architecture Overview</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Learn about the Express.js architecture, middleware stack, and routing structure.
+        </p>
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[#3B82F6] dark:group-hover:text-[#3B82F6]">
+          Read more
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="/concepts/data-models" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#3B82F6] dark:hover:border-[#3B82F6] transition-colors overflow-hidden no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-[#3B82F6]/10 flex items-center justify-center">
+            <svg className="w-6 h-6 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Data Models</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Understand the Mongoose schemas, discriminators, and database relationships.
+        </p>
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[#3B82F6] dark:group-hover:text-[#3B82F6]">
+          Read more
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="/guides/user-management" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#3B82F6] dark:hover:border-[#3B82F6] transition-colors overflow-hidden no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-[#3B82F6]/10 flex items-center justify-center">
+            <svg className="w-6 h-6 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">User Management</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Create and manage users, patients, and physiotherapists with role-based permissions.
+        </p>
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[#3B82F6] dark:group-hover:text-[#3B82F6]">
+          Read more
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+
+    <a href="/guides/social-authentication" className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] hover:border-[#3B82F6] dark:hover:border-[#3B82F6] transition-colors overflow-hidden no-underline bg-white dark:bg-[#1a1d27]">
+      <div className="p-6">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-[#3B82F6]/10 flex items-center justify-center">
+            <svg className="w-6 h-6 text-[#3B82F6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Social Authentication</h3>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          Integrate Google and Facebook OAuth login using Passport.js strategies.
+        </p>
+        <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-[#3B82F6] dark:group-hover:text-[#3B82F6]">
+          Read more
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl bg-gradient-to-br from-[#3B82F6] to-[#1E40AF] p-8 md:p-12">
+    <div className="max-w-3xl">
+      <h2 className="text-3xl font-bold text-white mb-4">Ready to build your physiotherapy platform?</h2>
+      <p className="text-lg text-blue-100 mb-6">
+        Follow our quickstart guide to get your API running in under 5 minutes, or explore the complete API reference to understand all available endpoints.
+      </p>
+      <div className="flex flex-wrap gap-4">
+        <a 
+          href="/quickstart" 
+          className="inline-flex items-center px-6 py-3 bg-white text-[#3B82F6] rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+        >
+          Start Building
+          <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+        <a 
+          href="/api/auth/login" 
+          className="inline-flex items-center px-6 py-3 border-2 border-white/30 bg-white/10 text-white rounded-lg font-semibold hover:bg-white/20 hover:border-white/50 transition-colors"
+        >
+          View API Docs
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

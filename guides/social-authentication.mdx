@@ -1,0 +1,758 @@
+---
+title: 'Social Authentication'
+description: 'Implement Facebook and Google OAuth authentication for the Fisioterapia Backend API'
+icon: 'right-to-bracket'
+---
+
+## Overview
+
+The Fisioterapia Backend API supports multiple authentication methods:
+
+1. **Traditional Email/Password Authentication**
+2. **Facebook OAuth 2.0**
+3. **Google Sign-In (Firebase Authentication)**
+
+This guide covers the setup and implementation of social authentication providers.
+
+## Authentication Architecture
+
+The authentication system uses:
+
+- **Passport.js** for OAuth strategies
+- **JWT (JSON Web Tokens)** for session management
+- **Firebase Admin SDK** for Google authentication
+- **bcrypt** for password hashing
+
+## Traditional Login
+
+### Endpoint
+
+```http
+POST /auth/login
+```
+
+### Request Body
+
+```json
+{
+  "correo": "user@example.com",
+  "password": "UserPassword123"
+}
+```
+
+### Implementation
+
+The login controller is implemented in `src/controller/auth.controller.js`:
+
+```javascript
+async login(req, res) {
+  try {
+    const body = req.body
+    
+    const userFind = await userModel.findOne({correo: body.correo})
+    
+    if(!userFind) {
+      logger.error("[LoginController] USER NOT FOUND")
+      return res.status(404).json({
+        error: "USER NOT FOUND"
+      })
+    }
+    
+    if(!validatePassword(body.password, userFind.password)) {
+      logger.error("[LoginController] PASSWORD INCORRECT")
+      return res.status(404).json({
+        error: "PASSWORD INCORRECT"
+      })
+    }
+    
+    const token = generateToken(userFind)
+    
+    return res.status(200).json(token)
+  } catch (e) {
+    console.log({err: e.message})
+  }
+}
+```
+
+### JWT Token Generation
+
+Tokens are generated in `src/helpers/jwt.js`:
+
+```javascript
+const Secret_Key = process.env.JSON_KEY || "Secr3t1t0"
+
+export const generateToken = (user) => {
+  logger.info("[jwt] Token generate")
+  
+  return jwt.sign(
+    {
+      id: user._id,
+      nombre: user.nombre,
+      apePaterno: user.apellidoPaterno,
+      apeMaterno: user.apellidoMaterno,
+      correo: user.correo,
+      dni: user.dni,
+      rol: user.rol,
+      cargo: user.cargo,
+      celular: user.celular,
+      especialidad: user.especialidad
+    },
+    Secret_Key,
+    {
+      expiresIn: "1h"
+    }
+  )
+}
+```
+
+<Warning>
+JWT tokens expire after 1 hour. Implement token refresh logic in your client application.
+</Warning>
+
+## Facebook OAuth Integration
+
+### Setup Facebook App
+
+<Steps>
+  <Step title="Create Facebook App">
+    1. Go to [Facebook Developers](https://developers.facebook.com/)
+    2. Click "My Apps" → "Create App"
+    3. Select "Consumer" as the app type
+    4. Fill in app details and create the app
+  </Step>
+  
+  <Step title="Configure OAuth Settings">
+    1. Navigate to "Facebook Login" → "Settings"
+    2. Add your OAuth redirect URIs:
+       - `http://localhost:8080/auth/facebook/callback` (development)
+       - `https://yourdomain.com/auth/facebook/callback` (production)
+    3. Save changes
+  </Step>
+  
+  <Step title="Get App Credentials">
+    1. Go to "Settings" → "Basic"
+    2. Copy your **App ID** and **App Secret**
+    3. Add these to your `.env` file
+  </Step>
+  
+  <Step title="Configure Environment Variables">
+    ```bash
+    FACEBOOK_ID=your_facebook_app_id
+    FACEBOOK_SECRET=your_facebook_app_secret
+    ```
+  </Step>
+</Steps>
+
+### Passport Configuration
+
+Facebook OAuth is configured using Passport.js in `src/config/passport.js`:
+
+```javascript
+import passport from "passport";
+import { Strategy as FacebookStrategy } from "passport-facebook";
+
+passport.use(new FacebookStrategy({
+  clientID: process.env.FACEBOOK_ID || "817846854540409",
+  clientSecret: process.env.FACEBOOK_SECRET || "1126480146288434",
+  callbackURL: "/auth/facebook/callback",
+  profileFields: ["id", "email"]
+}, async (accesToken, refreshToken, profile, done) => {
+  console.log(profile)
+  return done(null, profile)
+}));
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+export default passport;
+```
+
+<Note>
+The configuration requests `id` and `email` profile fields. You can add more fields like `displayName`, `photos`, etc.
+</Note>
+
+### Facebook Authentication Flow
+
+Routes are defined in `src/router/auth.route.js`:
+
+```javascript
+import { Router } from "express";
+import passport from "passport";
+
+export const authRouter = Router()
+
+// Initiate Facebook OAuth
+authRouter.get("/facebook", 
+  passport.authenticate("facebook", {scope: ["email"]})
+)
+
+// Facebook OAuth callback
+authRouter.get("/facebook/callback", 
+  passport.authenticate("facebook", {
+    failureRedirect: "/login",
+    successRedirect: "/profile"
+  })
+)
+```
+
+### Using Facebook Login
+
+<Steps>
+  <Step title="Redirect User to Facebook">
+    From your frontend, redirect users to:
+    
+    ```
+    GET http://localhost:8080/auth/facebook
+    ```
+    
+    This initiates the OAuth flow and redirects to Facebook's login page.
+  </Step>
+  
+  <Step title="User Authorizes App">
+    User logs in with Facebook credentials and authorizes your app to access their email.
+  </Step>
+  
+  <Step title="Facebook Redirects Back">
+    Facebook redirects to:
+    
+    ```
+    GET http://localhost:8080/auth/facebook/callback?code=...
+    ```
+    
+    Passport handles token exchange and profile retrieval.
+  </Step>
+  
+  <Step title="Handle Success/Failure">
+    - **Success**: User redirected to `/profile`
+    - **Failure**: User redirected to `/login`
+    
+    Customize these redirect URLs based on your application needs.
+  </Step>
+</Steps>
+
+<Warning>
+The current implementation redirects to `/profile` and `/login` routes. You should customize these to match your frontend routes or return JWT tokens instead.
+</Warning>
+
+### Improving Facebook Integration
+
+To create or find users on Facebook login, modify the strategy callback:
+
+```javascript
+passport.use(new FacebookStrategy({
+  // ... config
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Check if user exists
+    let user = await userModel.findOne({ 
+      correo: profile.emails[0].value 
+    });
+    
+    if (!user) {
+      // Create new user
+      user = await userModel.create({
+        nombre: profile.displayName.split(' ')[0],
+        apellidoPaterno: profile.displayName.split(' ')[1] || '',
+        correo: profile.emails[0].value,
+        dni: `facebook-${profile.id}`,
+        password: hashedPassword(`fb-${profile.id}`),
+        rol: 'paciente',
+        estado: 'activo'
+      });
+    }
+    
+    return done(null, user);
+  } catch (error) {
+    return done(error, null);
+  }
+}));
+```
+
+## Google Authentication (Firebase)
+
+### Setup Firebase Project
+
+<Steps>
+  <Step title="Create Firebase Project">
+    1. Go to [Firebase Console](https://console.firebase.google.com/)
+    2. Click "Add Project"
+    3. Follow the setup wizard to create your project
+  </Step>
+  
+  <Step title="Enable Authentication">
+    1. Navigate to "Authentication" → "Sign-in method"
+    2. Enable "Google" provider
+    3. Configure OAuth consent screen
+  </Step>
+  
+  <Step title="Create Service Account">
+    1. Go to Project Settings → Service Accounts
+    2. Click "Generate new private key"
+    3. Download the JSON file with credentials
+  </Step>
+  
+  <Step title="Configure Environment Variables">
+    Extract values from the service account JSON and add to `.env`:
+    
+    ```bash
+    FIREBASE_TYPE=service_account
+    FIREBASE_PROJECT_ID=your-project-id
+    FIREBASE_PRIVATE_KEY_ID=your_private_key_id
+    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour_Key\n-----END PRIVATE KEY-----\n"
+    FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
+    FIREBASE_CLIENT_ID=your_client_id
+    FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+    FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
+    FIREBASE_AUTH_PROVIDER=https://www.googleapis.com/oauth2/v1/certs
+    FIREBASE_CLIENT_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk%40your-project.iam.gserviceaccount.com
+    ```
+  </Step>
+</Steps>
+
+### Firebase Admin SDK Configuration
+
+Firebase is configured in `src/config/firebaseAdmin.js`:
+
+```javascript
+import admin from 'firebase-admin';
+
+const serviceAccount = {
+  type: process.env.FIREBASE_TYPE,
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  client_id: process.env.FIREBASE_CLIENT_ID,
+  auth_uri: process.env.FIREBASE_AUTH_URI,
+  token_uri: process.env.FIREBASE_TOKEN_URI,
+  auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER,
+  client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
+};
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+export default admin;
+```
+
+<Note>
+The code automatically handles newline characters in the private key by replacing `\\n` with actual newlines.
+</Note>
+
+### Google Login Endpoint
+
+```http
+POST /auth/login-social
+```
+
+### Request Body
+
+```json
+{
+  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjE5ZmU..."
+}
+```
+
+The `idToken` is obtained from Google Sign-In on your frontend.
+
+### Implementation
+
+Google authentication is implemented in `src/controller/auth.controller.js`:
+
+```javascript
+async loginGoogle(req, res) {
+  const { idToken } = req.body;
+  
+  try {
+    // Verify the Firebase ID token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    
+    const { uid, email, displayName, photoURL } = decodedToken;
+    
+    // Check if user exists
+    let user = await userModel.findOne({ firebaseUID: uid });
+    
+    if (!user) {
+      // Create new user
+      user = await userModel.create({ 
+        firebaseUID: uid, 
+        email, 
+        name: displayName, 
+        photo: photoURL, 
+        password: `${uid}-token`, 
+        dni: `google-${uid}` 
+      });
+    }
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.json({ token });
+  } catch (error) {
+    console.error(error);
+    res.status(401).json({ message: 'Token inválido' });
+  }
+}
+```
+
+### Frontend Integration
+
+Implement Google Sign-In on your frontend:
+
+<Tabs>
+  <Tab title="HTML/JavaScript">
+    ```html
+    <!-- Add Google Sign-In library -->
+    <script src="https://www.gstatic.com/firebasejs/9.x/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x/firebase-auth.js"></script>
+    
+    <script>
+      // Initialize Firebase
+      const firebaseConfig = {
+        apiKey: "your-api-key",
+        authDomain: "your-project.firebaseapp.com",
+        projectId: "your-project-id"
+      };
+      
+      firebase.initializeApp(firebaseConfig);
+      
+      // Google Sign-In
+      async function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        
+        try {
+          const result = await firebase.auth().signInWithPopup(provider);
+          const idToken = await result.user.getIdToken();
+          
+          // Send token to backend
+          const response = await fetch('http://localhost:8080/auth/login-social', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken })
+          });
+          
+          const data = await response.json();
+          console.log('JWT Token:', data.token);
+          
+          // Store token and redirect
+          localStorage.setItem('authToken', data.token);
+          window.location.href = '/dashboard';
+        } catch (error) {
+          console.error('Error:', error);
+        }
+      }
+    </script>
+    ```
+  </Tab>
+  
+  <Tab title="React">
+    ```jsx
+    import { initializeApp } from 'firebase/app';
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+    
+    const firebaseConfig = {
+      apiKey: "your-api-key",
+      authDomain: "your-project.firebaseapp.com",
+      projectId: "your-project-id"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    
+    async function handleGoogleSignIn() {
+      const provider = new GoogleAuthProvider();
+      
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const idToken = await result.user.getIdToken();
+        
+        const response = await fetch('http://localhost:8080/auth/login-social', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        
+        const data = await response.json();
+        localStorage.setItem('authToken', data.token);
+        
+        // Redirect to dashboard
+        navigate('/dashboard');
+      } catch (error) {
+        console.error('Google Sign-In Error:', error);
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Token Verification Middleware
+
+Protect routes using JWT verification middleware from `src/helpers/jwt.js`:
+
+```javascript
+export const verifyToken = (req, res, next) => {
+  const header = req.headers["authorization"]
+  
+  if(!header) {
+    logger.warn("Necesitas token")
+    return res.status(403).json({
+      error: "Token requerido"
+    })
+  }
+  
+  const token = header.split(" ")[1]
+  
+  try {
+    const decoded = jwt.verify(token, Secret_Key)
+    req.user = decoded
+  } catch(err) {
+    return res.status(401).json({ 
+      error: "Token invalido o expirado"
+    })
+  }
+  
+  next()
+}
+```
+
+### Usage
+
+```javascript
+import { verifyToken } from "../helpers/jwt.js";
+
+// Protected route
+app.get("/api/cita", verifyToken, citaController.verCitas);
+```
+
+### Authorization Header Format
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## Role-Based Access Control
+
+Implement admin-only routes using the `isAdmin` middleware:
+
+```javascript
+export const isAdmin = (req, res, next) => {
+  if (req.user.rol !== "admin" && req.user.cargo !== "gerente") {
+    logger.warn("[jwt] Required role admin and gerente", req.user)
+    return res.status(403).json({ 
+      message: "Acceso denegado: se requiere rol administrador" 
+    });
+  }
+  next();
+};
+```
+
+### Usage
+
+```javascript
+import { verifyToken, isAdmin } from "../helpers/jwt.js";
+
+// Admin-only route
+app.delete("/api/user/:id", verifyToken, isAdmin, usuarioController.deleteUser);
+```
+
+## Session Management
+
+The application uses `express-session` for Passport.js sessions (configured in `src/app.js`):
+
+```javascript
+import session from "express-session";
+
+app.use(session({ 
+  secret: "tuSecreto", 
+  resave: false, 
+  saveUninitialized: false 
+}));
+```
+
+<Warning>
+Change the session secret to a strong, random value in production. Never commit secrets to version control.
+</Warning>
+
+## Complete Authentication Flow
+
+<Tabs>
+  <Tab title="Email/Password">
+    <Steps>
+      <Step title="User submits credentials">
+        ```bash
+        POST /auth/login
+        {
+          "correo": "user@example.com",
+          "password": "password123"
+        }
+        ```
+      </Step>
+      
+      <Step title="Backend validates credentials">
+        - Find user by email
+        - Validate password using bcrypt
+        - Generate JWT token
+      </Step>
+      
+      <Step title="Return JWT token">
+        ```json
+        {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        }
+        ```
+      </Step>
+      
+      <Step title="Client stores token">
+        Store in localStorage or secure cookie
+      </Step>
+      
+      <Step title="Include token in requests">
+        ```
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Facebook OAuth">
+    <Steps>
+      <Step title="Initiate OAuth">
+        ```
+        GET /auth/facebook
+        ```
+        Redirects to Facebook login
+      </Step>
+      
+      <Step title="User authorizes">
+        User logs in and grants permissions
+      </Step>
+      
+      <Step title="Callback">
+        ```
+        GET /auth/facebook/callback?code=...
+        ```
+        Passport exchanges code for profile
+      </Step>
+      
+      <Step title="Create/find user">
+        Backend creates user or finds existing
+      </Step>
+      
+      <Step title="Redirect with session">
+        User redirected to success page with session
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Google Sign-In">
+    <Steps>
+      <Step title="Frontend Google Sign-In">
+        User clicks Google Sign-In button
+      </Step>
+      
+      <Step title="Get ID token">
+        Firebase SDK returns ID token
+      </Step>
+      
+      <Step title="Send to backend">
+        ```bash
+        POST /auth/login-social
+        {"idToken": "eyJhbGci..."}
+        ```
+      </Step>
+      
+      <Step title="Verify token">
+        Backend verifies token with Firebase Admin SDK
+      </Step>
+      
+      <Step title="Create/find user">
+        Backend creates user or finds existing by firebaseUID
+      </Step>
+      
+      <Step title="Return JWT">
+        ```json
+        {"token": "eyJhbGci..."}
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Strong Secrets" icon="key">
+    Use cryptographically random secrets for JWT_SECRET and session secrets. Generate using:
+    ```bash
+    node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+    ```
+  </Card>
+  
+  <Card title="HTTPS Only" icon="lock">
+    Always use HTTPS in production to prevent token interception.
+  </Card>
+  
+  <Card title="Token Expiration" icon="clock">
+    Implement token refresh logic. Current tokens expire after 1 hour (email/password) or 7 days (Google).
+  </Card>
+  
+  <Card title="Validate Redirect URIs" icon="shield-check">
+    Configure strict OAuth redirect URIs in Facebook and Google consoles.
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Facebook OAuth: Redirect URI Mismatch">
+    Ensure the callback URL in your Facebook app settings exactly matches:
+    ```
+    http://localhost:8080/auth/facebook/callback
+    ```
+    
+    Include protocol, domain, port, and path.
+  </Accordion>
+  
+  <Accordion title="Google: Invalid ID Token">
+    - Verify Firebase configuration in `.env`
+    - Check that private key newlines are properly escaped
+    - Ensure ID token hasn't expired (short-lived)
+  </Accordion>
+  
+  <Accordion title="JWT: Token Invalid or Expired">
+    - Verify `JSON_KEY` matches between token generation and verification
+    - Check token hasn't expired (1 hour for email/password auth)
+    - Implement token refresh mechanism
+  </Accordion>
+  
+  <Accordion title="Password Validation Fails">
+    - Ensure password is hashed during user creation
+    - Verify bcrypt compare function is working correctly
+    - Check password stored in database is a bcrypt hash
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="User Management" icon="users" href="/guides/user-management">
+    Learn how to create and manage user accounts
+  </Card>
+  
+  <Card title="Authorization" icon="shield" href="/guides/authorization">
+    Implement role-based access control
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/authentication/login">
+    View detailed authentication API documentation
+  </Card>
+  
+  <Card title="Security Guide" icon="lock" href="/guides/security">
+    Learn about security best practices
+  </Card>
+</CardGroup>

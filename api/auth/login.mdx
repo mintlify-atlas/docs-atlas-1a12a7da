@@ -1,0 +1,156 @@
+---
+title: 'Login'
+api: 'POST /auth/login'
+description: 'Authenticate users with email and password credentials'
+---
+
+## Overview
+
+The login endpoint authenticates users using email (correo) and password credentials. Upon successful authentication, it returns a JWT token that can be used for subsequent authenticated requests.
+
+## Request
+
+<ParamField body="correo" type="string" required>
+  User's email address used for authentication
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  User's password in plain text (will be validated against the hashed password stored in the database)
+</ParamField>
+
+### Request Example
+
+```bash cURL
+curl -X POST https://api.fisioterapia.com/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "correo": "usuario@ejemplo.com",
+    "password": "miPassword123"
+  }'
+```
+
+```json Request Body
+{
+  "correo": "usuario@ejemplo.com",
+  "password": "miPassword123"
+}
+```
+
+## Response
+
+### Success Response (200 OK)
+
+Returns a JWT token containing the user's information.
+
+```json
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0N2FiYzEyMzQ1Njc4OTBhYmNkZWYwMSIsIm5vbWJyZSI6Ikp1YW4iLCJhcGVQYXRlcm5vIjoiUMOpcmV6IiwiYXBlTWF0ZXJubyI6IkdhcmPDrWEiLCJjb3JyZW8iOiJ1c3VhcmlvQGVqZW1wbG8uY29tIiwiZG5pIjoiMTIzNDU2NzgiLCJyb2wiOiJ1c2VyIiwiY2FyZ28iOiJmaXNpb3RlcmFwZXV0YSIsImNlbHVsYXIiOiI5ODc2NTQzMjEiLCJlc3BlY2lhbGlkYWQiOiJUcmF1bWF0b2xvZ8OtYSIsImlhdCI6MTcwOTY0MDAwMCwiZXhwIjoxNzA5NjQzNjAwfQ.signature"
+```
+
+### Token Payload
+
+The JWT token contains the following claims:
+
+<ResponseField name="id" type="string">
+  User's unique identifier (MongoDB ObjectId)
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  User's first name
+</ResponseField>
+
+<ResponseField name="apePaterno" type="string">
+  User's paternal surname
+</ResponseField>
+
+<ResponseField name="apeMaterno" type="string">
+  User's maternal surname
+</ResponseField>
+
+<ResponseField name="correo" type="string">
+  User's email address
+</ResponseField>
+
+<ResponseField name="dni" type="string">
+  User's national identification number
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User's role in the system (e.g., "admin", "user", "gerente")
+</ResponseField>
+
+<ResponseField name="cargo" type="string">
+  User's position or job title
+</ResponseField>
+
+<ResponseField name="celular" type="string">
+  User's mobile phone number
+</ResponseField>
+
+<ResponseField name="especialidad" type="string">
+  User's specialty or area of expertise
+</ResponseField>
+
+<ResponseField name="iat" type="number">
+  Token issued at timestamp (Unix timestamp)
+</ResponseField>
+
+<ResponseField name="exp" type="number">
+  Token expiration timestamp (Unix timestamp, expires in 1 hour)
+</ResponseField>
+
+## Error Responses
+
+### User Not Found (404)
+
+Returned when the provided email address does not match any user in the database.
+
+```json
+{
+  "error": "USER NOT FOUND"
+}
+```
+
+### Incorrect Password (404)
+
+Returned when the provided password does not match the user's stored password.
+
+```json
+{
+  "error": "PASSWORD INCORRECT"
+}
+```
+
+### Server Error (500)
+
+Returned when an unexpected server error occurs during authentication.
+
+```json
+{
+  "err": "Error message description"
+}
+```
+
+## Authentication Flow
+
+1. **Request Validation**: The endpoint receives the email (correo) and password from the request body
+2. **User Lookup**: Searches for a user with the provided email address in the database
+3. **User Verification**: If no user is found, returns a 404 error with "USER NOT FOUND"
+4. **Password Validation**: Validates the provided password against the stored bcrypt hash
+5. **Password Verification**: If the password is incorrect, returns a 404 error with "PASSWORD INCORRECT"
+6. **Token Generation**: If authentication succeeds, generates a JWT token containing user information
+7. **Response**: Returns the JWT token with a 200 status code
+
+## Usage Notes
+
+- The token expires after 1 hour and must be refreshed or the user must re-authenticate
+- Include the token in subsequent requests using the `Authorization` header: `Bearer <token>`
+- The password is validated using bcrypt hashing for security
+- Both 404 responses (user not found and incorrect password) are logged on the server for security monitoring
+- The JWT secret key is configured via the `JSON_KEY` environment variable or defaults to "Secr3t1t0"
+
+## Security Considerations
+
+- Passwords are never stored in plain text; they are hashed using bcrypt
+- Failed login attempts are logged for security auditing
+- The token should be stored securely on the client side (e.g., in httpOnly cookies or secure storage)
+- Always use HTTPS in production to protect credentials during transmission

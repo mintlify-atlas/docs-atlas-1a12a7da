@@ -1,0 +1,143 @@
+---
+title: 'Get Appointments by Therapist'
+api: 'GET /api/cita/{id}'
+description: 'Retrieve all appointments for a specific therapist'
+---
+
+This endpoint returns all appointments associated with a specific therapist ID.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Therapist ID (MongoDB ObjectId)
+</ParamField>
+
+## Response
+
+Returns an array of appointment objects for the specified therapist.
+
+<ResponseField name="appointments" type="array">
+  Array of appointment objects
+  
+  <ResponseField name="_id" type="string">
+    Unique appointment identifier
+  </ResponseField>
+  
+  <ResponseField name="paciente" type="object">
+    Patient information (populated)
+    <ResponseField name="_id" type="string">
+      Patient ID
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Patient first name
+    </ResponseField>
+    <ResponseField name="apellidoPaterno" type="string">
+      Patient paternal surname
+    </ResponseField>
+    <ResponseField name="apellidoMaterno" type="string">
+      Patient maternal surname
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="terapeuta" type="object">
+    Therapist information (populated)
+    <ResponseField name="_id" type="string">
+      Therapist ID
+    </ResponseField>
+    <ResponseField name="nombre" type="string">
+      Therapist first name
+    </ResponseField>
+    <ResponseField name="apellidoPaterno" type="string">
+      Therapist paternal surname
+    </ResponseField>
+  </ResponseField>
+  
+  <ResponseField name="fecha" type="string">
+    Appointment date
+  </ResponseField>
+  
+  <ResponseField name="hora" type="string">
+    Appointment time
+  </ResponseField>
+  
+  <ResponseField name="motivo" type="string">
+    Reason for the appointment
+  </ResponseField>
+  
+  <ResponseField name="precio" type="number">
+    Appointment price
+  </ResponseField>
+  
+  <ResponseField name="estado" type="string">
+    Appointment status (pendiente, confirmada, cancelada, completada)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.fisioterapia.com/api/cita/507f1f77bcf86cd799439012
+```
+
+```javascript JavaScript
+const therapistId = '507f1f77bcf86cd799439012';
+const response = await fetch(`https://api.fisioterapia.com/api/cita/${therapistId}`);
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+therapist_id = '507f1f77bcf86cd799439012'
+response = requests.get(f'https://api.fisioterapia.com/api/cita/{therapist_id}')
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+[
+  {
+    "_id": "507f1f77bcf86cd799439013",
+    "paciente": {
+      "_id": "507f1f77bcf86cd799439011",
+      "nombre": "Juan",
+      "apellidoPaterno": "Pérez",
+      "apellidoMaterno": "García"
+    },
+    "terapeuta": {
+      "_id": "507f1f77bcf86cd799439012",
+      "nombre": "María",
+      "apellidoPaterno": "López"
+    },
+    "fecha": "2026-03-15T00:00:00.000Z",
+    "hora": "14:30",
+    "motivo": "Terapia de rehabilitación",
+    "precio": 60,
+    "estado": "confirmada"
+  },
+  {
+    "_id": "507f1f77bcf86cd799439014",
+    "paciente": {
+      "_id": "507f1f77bcf86cd799439015",
+      "nombre": "Ana",
+      "apellidoPaterno": "Martínez",
+      "apellidoMaterno": "Rodríguez"
+    },
+    "terapeuta": {
+      "_id": "507f1f77bcf86cd799439012",
+      "nombre": "María",
+      "apellidoPaterno": "López"
+    },
+    "fecha": "2026-03-16T00:00:00.000Z",
+    "hora": "10:00",
+    "motivo": "Masaje terapéutico",
+    "precio": 60,
+    "estado": "pendiente"
+  }
+]
+```
+
+</ResponseExample>

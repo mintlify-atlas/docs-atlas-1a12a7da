@@ -1,0 +1,101 @@
+---
+title: 'Send Contact Message'
+api: 'POST /api/contacto'
+description: 'Create a new contact message from users'
+---
+
+## Endpoint
+
+```
+POST /api/contacto
+```
+
+This endpoint allows users to send contact messages through the contact form. No authentication is required.
+
+## Request Body
+
+<ParamField body="nombres" type="string" required>
+  Full name of the person sending the message
+</ParamField>
+
+<ParamField body="correo" type="string" required>
+  Email address of the contact
+</ParamField>
+
+<ParamField body="telefono" type="string" required>
+  Phone number of the contact
+</ParamField>
+
+<ParamField body="asunto" type="string" required>
+  Subject of the message
+</ParamField>
+
+<ParamField body="mensaje" type="string" required>
+  Message content
+</ParamField>
+
+## Response
+
+<ResponseField name="_id" type="string">
+  Unique identifier for the contact message
+</ResponseField>
+
+<ResponseField name="nombres" type="string">
+  Full name of the person who sent the message
+</ResponseField>
+
+<ResponseField name="correo" type="string">
+  Email address of the contact
+</ResponseField>
+
+<ResponseField name="telefono" type="string">
+  Phone number of the contact
+</ResponseField>
+
+<ResponseField name="asunto" type="string">
+  Subject of the message
+</ResponseField>
+
+<ResponseField name="mensaje" type="string">
+  Message content
+</ResponseField>
+
+<ResponseField name="__v" type="number">
+  Version key from MongoDB
+</ResponseField>
+
+## Request Example
+
+```bash
+curl -X POST https://api.example.com/api/contacto \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombres": "Juan Pérez",
+    "correo": "juan.perez@example.com",
+    "telefono": "987654321",
+    "asunto": "Consulta sobre servicios",
+    "mensaje": "Me gustaría obtener más información sobre los servicios de fisioterapia."
+  }'
+```
+
+## Response Example
+
+```json
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "nombres": "Juan Pérez",
+  "correo": "juan.perez@example.com",
+  "telefono": "987654321",
+  "asunto": "Consulta sobre servicios",
+  "mensaje": "Me gustaría obtener más información sobre los servicios de fisioterapia.",
+  "__v": 0
+}
+```
+
+## Status Codes
+
+| Status Code | Description |
+|-------------|-------------|
+| 200 | Contact message created successfully |
+| 400 | Invalid request body |
+| 500 | Internal server error |

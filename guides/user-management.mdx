@@ -1,0 +1,594 @@
+---
+title: 'User Management'
+description: 'Complete guide to creating and managing users, patients, and physiotherapists'
+icon: 'users'
+---
+
+## Overview
+
+The Fisioterapia Backend uses a sophisticated user management system based on Mongoose discriminators. This allows different user types (patients, physiotherapists, and administrators) to share a common base schema while having type-specific fields.
+
+## User Architecture
+
+### Base User Schema
+
+All users share a common schema defined in `src/models/usuarioModel.js`:
+
+```javascript
+const userSchema = mongoose.Schema({
+  nombre: String,
+  apellidoPaterno: String,
+  apellidoMaterno: String,
+  dni: {
+    type: String,
+    unique: true,
+    required: true
+  },
+  cumpleanios: String,
+  genero: String,
+  img: String,
+  celular: String,
+  direccion: String,
+  correo: {
+    type: String,
+    unique: true
+  },
+  password: {
+    type: String,
+    required: true
+  },
+  estado: {
+    type: String,
+    enum: ["activo", "inactivo"],
+    default: "activo"
+  }
+}, { discriminatorKey: "rol", collection: "user" })
+```
+
+<Note>
+All user types are stored in the same `user` collection, differentiated by the `rol` field (discriminator key).
+</Note>
+
+### User Types
+
+<Tabs>
+  <Tab title="Patient (Paciente)">
+    Extends the base user schema with medical information:
+    
+    ```javascript
+    const pacienteSchema = new mongoose.Schema({
+      historialMedico: [String],
+      alergias: [String]
+    });
+    
+    export const pacienteModel = userModel.discriminator("paciente", pacienteSchema);
+    ```
+    
+    **Additional Fields:**
+    - `historialMedico` - Array of medical history entries
+    - `alergias` - Array of known allergies
+  </Tab>
+  
+  <Tab title="Physiotherapist (Fisioterapeuta)">
+    Extends the base user schema with professional information:
+    
+    ```javascript
+    const fisioterapeutaSchema = new mongoose.Schema({
+      especialidad: String,
+      colegiatura: String,
+      universidad: String,
+      descProfesional: String
+    });
+    
+    export const fisioModel = userModel.discriminator("fisioterapeuta", fisioterapeutaSchema);
+    ```
+    
+    **Additional Fields:**
+    - `especialidad` - Specialization area
+    - `colegiatura` - Professional license number
+    - `universidad` - University/education institution
+    - `descProfesional` - Professional description
+  </Tab>
+  
+  <Tab title="Administrator (Admin)">
+    Extends the base user schema with administrative fields:
+    
+    ```javascript
+    const adminSchema = new mongoose.Schema({
+      cargo: String
+    });
+    
+    export const adminModel = userModel.discriminator("admin", adminSchema);
+    ```
+    
+    **Additional Fields:**
+    - `cargo` - Administrative position/role
+  </Tab>
+</Tabs>
+
+## Creating Users
+
+### Create a User
+
+#### Endpoint
+
+```http
+POST /api/user
+```
+
+#### Request Body
+
+```json
+{
+  "nombre": "Juan",
+  "apellidoPaterno": "Perez",
+  "apellidoMaterno": "Garcia",
+  "dni": "12345678",
+  "cumpleanios": "1990-05-15",
+  "genero": "masculino",
+  "celular": "987654321",
+  "direccion": "Av. Principal 123, Lima",
+  "correo": "juan.perez@example.com",
+  "password": "SecurePassword123",
+  "rol": "paciente"
+}
+```
+
+#### Required Fields
+
+- `dni` - National ID number (must be unique)
+- `correo` - Email address (must be unique)
+- `password` - Password (will be automatically hashed)
+
+<Warning>
+The system automatically converts `nombre`, `apellidoPaterno`, and `apellidoMaterno` to uppercase for consistency.
+</Warning>
+
+#### Password Security
+
+Passwords are automatically hashed using bcrypt in the service layer (`src/service/usuario.service.js`):
+
+```javascript
+async crearUsuario(data) {
+  data.password = hashedPassword(data.password)
+  
+  data.nombre = data.nombre.toUpperCase()
+  data.apellidoPaterno = data.apellidoPaterno.toUpperCase()
+  data.apellidoMaterno = data.apellidoMaterno.toUpperCase()
+  
+  return await usuarioDao.createUsuario(data)
+}
+```
+
+### Create a Patient
+
+#### Endpoint
+
+```http
+POST /api/paciente
+```
+
+#### Request Body
+
+```json
+{
+  "nombre": "Maria",
+  "apellidoPaterno": "Lopez",
+  "apellidoMaterno": "Rodriguez",
+  "dni": "87654321",
+  "cumpleanios": "1985-08-20",
+  "genero": "femenino",
+  "celular": "912345678",
+  "direccion": "Jr. Las Flores 456, Lima",
+  "correo": "maria.lopez@example.com",
+  "password": "SecurePassword456",
+  "historialMedico": [
+    "Cirugía de rodilla en 2020",
+    "Fractura de tobillo en 2018"
+  ],
+  "alergias": [
+    "Penicilina",
+    "Polen"
+  ]
+}
+```
+
+<Note>
+The `rol` field is automatically set to "paciente" when using the patient creation endpoint.
+</Note>
+
+### Create a Physiotherapist
+
+Similar to patient creation, use the physiotherapist-specific endpoint to include professional credentials:
+
+```json
+{
+  "nombre": "Carlos",
+  "apellidoPaterno": "Ramirez",
+  "apellidoMaterno": "Santos",
+  "dni": "45678912",
+  "correo": "carlos.ramirez@example.com",
+  "password": "SecurePassword789",
+  "especialidad": "Rehabilitación Deportiva",
+  "colegiatura": "CFPT-12345",
+  "universidad": "Universidad Nacional Mayor de San Marcos",
+  "descProfesional": "Especialista en rehabilitación deportiva con 10 años de experiencia"
+}
+```
+
+## Retrieving Users
+
+### Get All Users
+
+```http
+GET /api/user
+```
+
+Returns all users regardless of role.
+
+### Get Users by Role
+
+```http
+GET /api/user?rol=paciente
+```
+
+Filter users by role. Valid values:
+- `paciente`
+- `fisioterapeuta`
+- `admin`
+
+**Example Response:**
+
+```json
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "MARIA",
+    "apellidoPaterno": "LOPEZ",
+    "apellidoMaterno": "RODRIGUEZ",
+    "dni": "87654321",
+    "correo": "maria.lopez@example.com",
+    "celular": "912345678",
+    "estado": "activo",
+    "rol": "paciente",
+    "historialMedico": ["Cirugía de rodilla en 2020"],
+    "alergias": ["Penicilina"]
+  }
+]
+```
+
+### Get All Patients
+
+```http
+GET /api/paciente
+```
+
+Returns all users with role "paciente".
+
+### Get User by DNI
+
+```http
+GET /api/user/:dni
+```
+
+Retrieve a specific user by their national ID number.
+
+**Example:**
+```bash
+curl http://localhost:8080/api/user/12345678
+```
+
+### Search Users by Name
+
+```http
+GET /api/user?name=Juan
+```
+
+Search for users whose name matches the query. The search converts the query to uppercase for matching.
+
+## Updating Users
+
+### Update User Information
+
+#### Endpoint
+
+```http
+PUT /api/user
+```
+
+#### Request Body
+
+```json
+{
+  "id": "507f1f77bcf86cd799439011",
+  "nombre": "Juan Carlos",
+  "celular": "999888777",
+  "direccion": "Nueva Direccion 789"
+}
+```
+
+The controller automatically converts name fields to uppercase:
+
+```javascript
+async updUser(req, res) {
+  const body = req.body
+  
+  if (body.nombre) body.nombre = body.nombre.toUpperCase();
+  if (body.apellidoPaterno) body.apellidoPaterno = body.apellidoPaterno.toUpperCase();
+  if (body.apellidoMaterno) body.apellidoMaterno = body.apellidoMaterno.toUpperCase();
+  
+  const userUpdate = await usuarioService.modificarUsuario(body.id, body)
+  
+  return res.status(200).json({
+    message: "Usuario cambiado",
+    userUpdate
+  })
+}
+```
+
+### Update User Status
+
+#### Endpoint
+
+```http
+PUT /api/user/status/:id
+```
+
+#### Request Body
+
+```json
+{
+  "estado": "inactivo"
+}
+```
+
+Change user status between `activo` and `inactivo`. This is useful for temporarily disabling user accounts without deleting them.
+
+**Example:**
+```bash
+curl -X PUT http://localhost:8080/api/user/status/507f1f77bcf86cd799439011 \
+  -H "Content-Type: application/json" \
+  -d '{"estado": "inactivo"}'
+```
+
+### Update Patient Information
+
+#### Endpoint
+
+```http
+PUT /api/paciente/:id
+```
+
+Update patient-specific fields including medical history and allergies:
+
+```json
+{
+  "historialMedico": [
+    "Cirugía de rodilla en 2020",
+    "Fractura de tobillo en 2018",
+    "Terapia física completada en 2021"
+  ],
+  "alergias": [
+    "Penicilina",
+    "Polen",
+    "Látex"
+  ]
+}
+```
+
+## Password Management
+
+### Change Password
+
+#### Endpoint
+
+```http
+PUT /api/user/password
+```
+
+#### Request Body
+
+```json
+{
+  "correo": "juan.perez@example.com",
+  "password": "NewSecurePassword123"
+}
+```
+
+The password is automatically hashed before storage:
+
+```javascript
+async updPass(req, res) {
+  const body = req.body
+  
+  const userFind = await userModel.findOne({correo: body.correo})
+  
+  if(userFind) {
+    const userUpdate = usuarioService.modificarContra(body.correo, body.password)
+    
+    logger.info("[UserController] Password updated successfully")
+    
+    return res.status(200).json({
+      message: "Contraseña cambiada",
+      userUpdate
+    })
+  }
+  
+  return res.status(404).json({
+    error: "usuario no encontrado para el pass"
+  })
+}
+```
+
+<Warning>
+Implement proper password reset verification (email tokens, OTP, etc.) in production. The current endpoint updates passwords based on email alone.
+</Warning>
+
+## Deleting Users
+
+### Endpoint
+
+```http
+DELETE /api/user/:id
+```
+
+### Path Parameters
+
+- `id` - User ID (MongoDB ObjectId)
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8080/api/user/507f1f77bcf86cd799439011
+```
+
+<Warning>
+Deleting a user permanently removes them from the database. Consider using status updates (`estado: "inactivo"`) instead for soft deletion.
+</Warning>
+
+## Complete User Creation Workflow
+
+<Steps>
+  <Step title="Prepare User Data">
+    Collect all required user information:
+    - Basic personal details (name, DNI, email)
+    - Contact information (phone, address)
+    - Password (will be hashed automatically)
+    - Role-specific data (medical history for patients, credentials for therapists)
+  </Step>
+  
+  <Step title="Submit Request">
+    Send POST request to appropriate endpoint:
+    - `/api/user` for generic users
+    - `/api/paciente` for patients
+    - Use appropriate endpoint for physiotherapists
+    
+    ```bash
+    curl -X POST http://localhost:8080/api/paciente \
+      -H "Content-Type: application/json" \
+      -d @patient-data.json
+    ```
+  </Step>
+  
+  <Step title="Verify Creation">
+    The API returns the created user object with:
+    - Generated `_id`
+    - Uppercased name fields
+    - Hashed password
+    - Default `estado: "activo"`
+  </Step>
+  
+  <Step title="User Can Login">
+    User can now authenticate using:
+    - Email (correo) and password
+    - Social authentication (Google/Facebook)
+  </Step>
+</Steps>
+
+## Implementation Details
+
+The user controller is implemented in `src/controller/usuario.controller.js`:
+
+```javascript
+export const usuarioController = {
+  async createUsuario(req, res) {
+    let body = req.body
+    
+    try {
+      const userCreate = await usuarioService.crearUsuario(body)
+      logger.info(`[UserController] Create user Successfully`)
+      return res.status(200).json({userCreate})
+    } catch(e) {
+      logger.error(`Error ${e.message}`)
+      return res.status(500).json({ error: "Error interno del servidor" });
+    }
+  },
+  
+  async readUsuarios(req, res) { /* Get all users */ },
+  async getByRol(req, res) { /* Filter by role */ },
+  async getUsuarioByDni(req, res) { /* Get by DNI */ },
+  async updUser(req, res) { /* Update user */ },
+  async updPass(req, res) { /* Update password */ },
+  async deleteUser(req, res) { /* Delete user */ },
+  async updUserStatus(req, res) { /* Update status */ }
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Validate Unique Fields" icon="shield-check">
+    Always check if DNI and email already exist before creating users to avoid duplicate key errors.
+  </Card>
+  
+  <Card title="Use Soft Deletion" icon="trash-undo">
+    Set `estado: "inactivo"` instead of deleting users to maintain referential integrity with appointments.
+  </Card>
+  
+  <Card title="Sanitize Input" icon="filter">
+    Validate and sanitize all user input, especially names and addresses, before storing.
+  </Card>
+  
+  <Card title="Password Policies" icon="lock">
+    Implement strong password requirements in your frontend or add validation middleware.
+  </Card>
+</CardGroup>
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="Duplicate DNI or Email">
+    Error occurs when trying to create a user with an existing DNI or email:
+    
+    ```json
+    {
+      "error": "E11000 duplicate key error"
+    }
+    ```
+    
+    Solution: Check if user exists before creation, or catch the error and return a user-friendly message.
+  </Accordion>
+  
+  <Accordion title="Missing Required Fields">
+    Mongoose validation error when required fields are missing:
+    
+    ```json
+    {
+      "error": "Path `dni` is required"
+    }
+    ```
+    
+    Solution: Ensure all required fields (dni, correo, password) are included in the request.
+  </Accordion>
+  
+  <Accordion title="Invalid User ID">
+    404 error when trying to update/delete non-existent user:
+    
+    ```json
+    {
+      "error": "usuario no encontrado"
+    }
+    ```
+    
+    Solution: Verify the user ID exists before attempting operations.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/guides/social-authentication">
+    Learn how users authenticate with credentials or social login
+  </Card>
+  
+  <Card title="Managing Appointments" icon="calendar" href="/guides/managing-appointments">
+    Create appointments between patients and therapists
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api-reference/users/create">
+    View detailed API documentation for user endpoints
+  </Card>
+  
+  <Card title="Authorization" icon="shield" href="/guides/authorization">
+    Implement role-based access control
+  </Card>
+</CardGroup>

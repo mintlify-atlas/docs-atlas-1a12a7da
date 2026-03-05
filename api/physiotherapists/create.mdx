@@ -1,0 +1,185 @@
+---
+title: "Create Physiotherapist"
+api: "POST /api/fisioterapeuta"
+description: "Create a new physiotherapist profile in the system"
+---
+
+## Request Body
+
+<ParamField body="nombre" type="string" required>
+  Physiotherapist's first name
+</ParamField>
+
+<ParamField body="apellidoPaterno" type="string" required>
+  Physiotherapist's paternal last name
+</ParamField>
+
+<ParamField body="apellidoMaterno" type="string" required>
+  Physiotherapist's maternal last name
+</ParamField>
+
+<ParamField body="dni" type="string" required>
+  National identification number (must be unique)
+</ParamField>
+
+<ParamField body="correo" type="string" required>
+  Email address (must be unique)
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Account password
+</ParamField>
+
+<ParamField body="cumpleanios" type="string">
+  Date of birth
+</ParamField>
+
+<ParamField body="genero" type="string">
+  Gender
+</ParamField>
+
+<ParamField body="img" type="string">
+  Profile image URL
+</ParamField>
+
+<ParamField body="celular" type="string">
+  Mobile phone number
+</ParamField>
+
+<ParamField body="direccion" type="string">
+  Physical address
+</ParamField>
+
+<ParamField body="especialidad" type="string">
+  Medical specialty (e.g., sports therapy, pediatric therapy)
+</ParamField>
+
+<ParamField body="colegiatura" type="string">
+  Professional license number
+</ParamField>
+
+<ParamField body="universidad" type="string">
+  University where the degree was obtained
+</ParamField>
+
+<ParamField body="descProfesional" type="string">
+  Professional description and biography
+</ParamField>
+
+<ParamField body="estado" type="string" default="activo">
+  Account status. Possible values: `activo`, `inactivo`
+</ParamField>
+
+## Response
+
+<ResponseField name="_id" type="string">
+  Unique identifier for the physiotherapist
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Physiotherapist's first name
+</ResponseField>
+
+<ResponseField name="apellidoPaterno" type="string">
+  Physiotherapist's paternal last name
+</ResponseField>
+
+<ResponseField name="apellidoMaterno" type="string">
+  Physiotherapist's maternal last name
+</ResponseField>
+
+<ResponseField name="dni" type="string">
+  National identification number
+</ResponseField>
+
+<ResponseField name="correo" type="string">
+  Email address
+</ResponseField>
+
+<ResponseField name="cumpleanios" type="string">
+  Date of birth
+</ResponseField>
+
+<ResponseField name="genero" type="string">
+  Gender
+</ResponseField>
+
+<ResponseField name="img" type="string">
+  Profile image URL
+</ResponseField>
+
+<ResponseField name="celular" type="string">
+  Mobile phone number
+</ResponseField>
+
+<ResponseField name="direccion" type="string">
+  Physical address
+</ResponseField>
+
+<ResponseField name="especialidad" type="string">
+  Medical specialty
+</ResponseField>
+
+<ResponseField name="colegiatura" type="string">
+  Professional license number
+</ResponseField>
+
+<ResponseField name="universidad" type="string">
+  University where the degree was obtained
+</ResponseField>
+
+<ResponseField name="descProfesional" type="string">
+  Professional description
+</ResponseField>
+
+<ResponseField name="estado" type="string">
+  Account status (activo/inactivo)
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User role (fisioterapeuta)
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.example.com/api/fisioterapeuta \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Carlos",
+    "apellidoPaterno": "García",
+    "apellidoMaterno": "López",
+    "dni": "12345678",
+    "correo": "carlos.garcia@example.com",
+    "password": "securePassword123",
+    "celular": "+51987654321",
+    "especialidad": "Fisioterapia Deportiva",
+    "colegiatura": "FT-12345",
+    "universidad": "Universidad Nacional Mayor de San Marcos",
+    "descProfesional": "Especialista en rehabilitación deportiva con 10 años de experiencia"
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "nombre": "Carlos",
+  "apellidoPaterno": "García",
+  "apellidoMaterno": "López",
+  "dni": "12345678",
+  "correo": "carlos.garcia@example.com",
+  "celular": "+51987654321",
+  "especialidad": "Fisioterapia Deportiva",
+  "colegiatura": "FT-12345",
+  "universidad": "Universidad Nacional Mayor de San Marcos",
+  "descProfesional": "Especialista en rehabilitación deportiva con 10 años de experiencia",
+  "estado": "activo",
+  "rol": "fisioterapeuta"
+}
+```
+
+</ResponseExample>

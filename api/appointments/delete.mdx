@@ -1,0 +1,100 @@
+---
+title: 'Delete Appointment'
+api: 'DELETE /api/cita/delete/{id}'
+description: 'Delete an appointment by ID'
+---
+
+This endpoint permanently deletes an appointment from the system.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  Appointment ID (MongoDB ObjectId)
+</ParamField>
+
+## Response
+
+<ResponseField name="messg" type="string">
+  Success message
+</ResponseField>
+
+<ResponseField name="cita" type="object">
+  Deleted appointment object
+  
+  <ResponseField name="_id" type="string">
+    Unique appointment identifier
+  </ResponseField>
+  
+  <ResponseField name="paciente" type="string">
+    Patient ID
+  </ResponseField>
+  
+  <ResponseField name="terapeuta" type="string">
+    Therapist ID
+  </ResponseField>
+  
+  <ResponseField name="fecha" type="string">
+    Appointment date
+  </ResponseField>
+  
+  <ResponseField name="hora" type="string">
+    Appointment time
+  </ResponseField>
+  
+  <ResponseField name="motivo" type="string">
+    Reason for the appointment
+  </ResponseField>
+  
+  <ResponseField name="precio" type="number">
+    Appointment price
+  </ResponseField>
+  
+  <ResponseField name="estado" type="string">
+    Appointment status
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X DELETE https://api.fisioterapia.com/api/cita/delete/507f1f77bcf86cd799439013
+```
+
+```javascript JavaScript
+const appointmentId = '507f1f77bcf86cd799439013';
+const response = await fetch(`https://api.fisioterapia.com/api/cita/delete/${appointmentId}`, {
+  method: 'DELETE'
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+appointment_id = '507f1f77bcf86cd799439013'
+response = requests.delete(f'https://api.fisioterapia.com/api/cita/delete/{appointment_id}')
+data = response.json()
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "messg": "cita eliminada por id de paciente",
+  "cita": {
+    "_id": "507f1f77bcf86cd799439013",
+    "paciente": "507f1f77bcf86cd799439011",
+    "terapeuta": "507f1f77bcf86cd799439012",
+    "fecha": "2026-03-15T00:00:00.000Z",
+    "hora": "14:30",
+    "motivo": "Terapia de rehabilitación",
+    "precio": 60,
+    "estado": "confirmada"
+  }
+}
+```
+
+</ResponseExample>

@@ -1,0 +1,134 @@
+---
+title: "Get Physiotherapists by Specialty"
+api: "GET /api/fisioterapeuta/especialidad/{espe}"
+description: "Retrieve physiotherapists filtered by their medical specialty"
+---
+
+## Path Parameters
+
+<ParamField path="espe" type="string" required>
+  The specialty to filter by (e.g., "Fisioterapia Deportiva", "Fisioterapia Pediátrica")
+</ParamField>
+
+## Response
+
+Returns an array of physiotherapist objects matching the specified specialty.
+
+<ResponseField name="[]" type="array">
+  Array of physiotherapist objects with the specified specialty
+  
+  <ResponseField name="_id" type="string">
+    Unique identifier for the physiotherapist
+  </ResponseField>
+  
+  <ResponseField name="nombre" type="string">
+    Physiotherapist's first name
+  </ResponseField>
+  
+  <ResponseField name="apellidoPaterno" type="string">
+    Physiotherapist's paternal last name
+  </ResponseField>
+  
+  <ResponseField name="apellidoMaterno" type="string">
+    Physiotherapist's maternal last name
+  </ResponseField>
+  
+  <ResponseField name="dni" type="string">
+    National identification number
+  </ResponseField>
+  
+  <ResponseField name="correo" type="string">
+    Email address
+  </ResponseField>
+  
+  <ResponseField name="cumpleanios" type="string">
+    Date of birth
+  </ResponseField>
+  
+  <ResponseField name="genero" type="string">
+    Gender
+  </ResponseField>
+  
+  <ResponseField name="img" type="string">
+    Profile image URL
+  </ResponseField>
+  
+  <ResponseField name="celular" type="string">
+    Mobile phone number
+  </ResponseField>
+  
+  <ResponseField name="direccion" type="string">
+    Physical address
+  </ResponseField>
+  
+  <ResponseField name="especialidad" type="string">
+    Medical specialty
+  </ResponseField>
+  
+  <ResponseField name="colegiatura" type="string">
+    Professional license number
+  </ResponseField>
+  
+  <ResponseField name="universidad" type="string">
+    University where the degree was obtained
+  </ResponseField>
+  
+  <ResponseField name="descProfesional" type="string">
+    Professional description
+  </ResponseField>
+  
+  <ResponseField name="estado" type="string">
+    Account status (activo/inactivo)
+  </ResponseField>
+  
+  <ResponseField name="rol" type="string">
+    User role (fisioterapeuta)
+  </ResponseField>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET https://api.example.com/api/fisioterapeuta/especialidad/Fisioterapia%20Deportiva
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "Carlos",
+    "apellidoPaterno": "García",
+    "apellidoMaterno": "López",
+    "dni": "12345678",
+    "correo": "carlos.garcia@example.com",
+    "celular": "+51987654321",
+    "especialidad": "Fisioterapia Deportiva",
+    "colegiatura": "FT-12345",
+    "universidad": "Universidad Nacional Mayor de San Marcos",
+    "descProfesional": "Especialista en rehabilitación deportiva con 10 años de experiencia",
+    "estado": "activo",
+    "rol": "fisioterapeuta"
+  },
+  {
+    "_id": "507f1f77bcf86cd799439013",
+    "nombre": "Luis",
+    "apellidoPaterno": "Martínez",
+    "apellidoMaterno": "Sánchez",
+    "dni": "11223344",
+    "correo": "luis.martinez@example.com",
+    "celular": "+51998877665",
+    "especialidad": "Fisioterapia Deportiva",
+    "colegiatura": "FT-54321",
+    "universidad": "Universidad de Lima",
+    "descProfesional": "Fisioterapeuta especializado en lesiones deportivas y recuperación atlética",
+    "estado": "activo",
+    "rol": "fisioterapeuta"
+  }
+]
+```
+
+</ResponseExample>

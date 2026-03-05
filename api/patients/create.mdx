@@ -1,0 +1,184 @@
+---
+title: "Create Patient"
+api: "POST /api/paciente"
+description: "Create a new patient with medical history and allergy information"
+---
+
+## Request Body
+
+<ParamField body="nombre" type="string" required>
+  Patient's first name
+</ParamField>
+
+<ParamField body="apellidoPaterno" type="string" required>
+  Patient's paternal last name
+</ParamField>
+
+<ParamField body="apellidoMaterno" type="string">
+  Patient's maternal last name
+</ParamField>
+
+<ParamField body="dni" type="string" required>
+  Patient's national identification number (DNI). Must be unique.
+</ParamField>
+
+<ParamField body="cumpleanios" type="string">
+  Patient's date of birth
+</ParamField>
+
+<ParamField body="genero" type="string">
+  Patient's gender
+</ParamField>
+
+<ParamField body="img" type="string">
+  URL or path to patient's profile image
+</ParamField>
+
+<ParamField body="celular" type="string">
+  Patient's phone number
+</ParamField>
+
+<ParamField body="direccion" type="string">
+  Patient's address
+</ParamField>
+
+<ParamField body="correo" type="string" required>
+  Patient's email address. Must be unique.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Patient's password for authentication
+</ParamField>
+
+<ParamField body="estado" type="string" default="activo">
+  Patient's account status. Possible values: `activo`, `inactivo`
+</ParamField>
+
+<ParamField body="historialMedico" type="string[]">
+  Array of medical history entries for the patient
+</ParamField>
+
+<ParamField body="alergias" type="string[]">
+  Array of known allergies for the patient
+</ParamField>
+
+## Response
+
+<ResponseField name="_id" type="string">
+  Unique identifier for the created patient
+</ResponseField>
+
+<ResponseField name="nombre" type="string">
+  Patient's first name
+</ResponseField>
+
+<ResponseField name="apellidoPaterno" type="string">
+  Patient's paternal last name
+</ResponseField>
+
+<ResponseField name="apellidoMaterno" type="string">
+  Patient's maternal last name
+</ResponseField>
+
+<ResponseField name="dni" type="string">
+  Patient's national identification number
+</ResponseField>
+
+<ResponseField name="cumpleanios" type="string">
+  Patient's date of birth
+</ResponseField>
+
+<ResponseField name="genero" type="string">
+  Patient's gender
+</ResponseField>
+
+<ResponseField name="img" type="string">
+  URL or path to patient's profile image
+</ResponseField>
+
+<ResponseField name="celular" type="string">
+  Patient's phone number
+</ResponseField>
+
+<ResponseField name="direccion" type="string">
+  Patient's address
+</ResponseField>
+
+<ResponseField name="correo" type="string">
+  Patient's email address
+</ResponseField>
+
+<ResponseField name="estado" type="string">
+  Patient's account status
+</ResponseField>
+
+<ResponseField name="rol" type="string">
+  User role, always set to `paciente` for patients
+</ResponseField>
+
+<ResponseField name="historialMedico" type="string[]">
+  Array of medical history entries
+</ResponseField>
+
+<ResponseField name="alergias" type="string[]">
+  Array of known allergies
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://api.example.com/api/paciente \
+  -H "Content-Type: application/json" \
+  -d '{
+    "nombre": "Juan",
+    "apellidoPaterno": "García",
+    "apellidoMaterno": "López",
+    "dni": "12345678",
+    "cumpleanios": "1990-05-15",
+    "genero": "Masculino",
+    "celular": "+51987654321",
+    "direccion": "Av. Principal 123, Lima",
+    "correo": "juan.garcia@example.com",
+    "password": "securePassword123",
+    "estado": "activo",
+    "historialMedico": [
+      "Fractura de tobillo en 2018",
+      "Cirugía de menisco en 2020"
+    ],
+    "alergias": [
+      "Penicilina",
+      "Polen"
+    ]
+  }'
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json Response
+{
+  "_id": "507f1f77bcf86cd799439011",
+  "nombre": "Juan",
+  "apellidoPaterno": "García",
+  "apellidoMaterno": "López",
+  "dni": "12345678",
+  "cumpleanios": "1990-05-15",
+  "genero": "Masculino",
+  "celular": "+51987654321",
+  "direccion": "Av. Principal 123, Lima",
+  "correo": "juan.garcia@example.com",
+  "estado": "activo",
+  "rol": "paciente",
+  "historialMedico": [
+    "Fractura de tobillo en 2018",
+    "Cirugía de menisco en 2020"
+  ],
+  "alergias": [
+    "Penicilina",
+    "Polen"
+  ]
+}
+```
+
+</ResponseExample>
