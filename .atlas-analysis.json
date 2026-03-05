@@ -1,0 +1,123 @@
+{
+  "projectType": "api-service",
+  "projectName": "Fisioterapia Backend API",
+  "projectDescription": "REST API for managing physiotherapy appointments, patients, therapists, and user authentication",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#1E40AF",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "authentication"]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": ["concepts/architecture", "concepts/data-models", "concepts/user-roles"]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/setup-environment",
+              "guides/managing-appointments",
+              "guides/user-management",
+              "guides/social-authentication"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": ["api/auth/login", "api/auth/social-login"]
+          },
+          {
+            "group": "Users",
+            "pages": [
+              "api/users/create",
+              "api/users/list",
+              "api/users/get-by-dni",
+              "api/users/update",
+              "api/users/delete"
+            ]
+          },
+          {
+            "group": "Patients",
+            "pages": [
+              "api/patients/create",
+              "api/patients/list",
+              "api/patients/update"
+            ]
+          },
+          {
+            "group": "Physiotherapists",
+            "pages": [
+              "api/physiotherapists/create",
+              "api/physiotherapists/list",
+              "api/physiotherapists/get-by-id",
+              "api/physiotherapists/get-by-specialty"
+            ]
+          },
+          {
+            "group": "Appointments",
+            "pages": [
+              "api/appointments/create",
+              "api/appointments/list",
+              "api/appointments/get-by-therapist",
+              "api/appointments/get-by-patient",
+              "api/appointments/update",
+              "api/appointments/delete"
+            ]
+          },
+          {
+            "group": "Contact",
+            "pages": ["api/contact/send"]
+          },
+          {
+            "group": "Admin",
+            "pages": ["api/admin/create"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Appointment scheduling and management",
+    "User authentication with JWT and social login (Google/Facebook)",
+    "Role-based access control (Admin, Physiotherapist, Patient)",
+    "Patient medical history tracking",
+    "Physiotherapist specialty filtering",
+    "MongoDB data persistence with Mongoose",
+    "Firebase Admin integration"
+  ],
+  "publicApiSurface": [
+    "POST /auth/login",
+    "POST /auth/login-social",
+    "GET /auth/facebook",
+    "POST /api/user",
+    "GET /api/user",
+    "GET /api/user/find",
+    "GET /api/user/getdni/:dni",
+    "POST /api/paciente",
+    "GET /api/paciente",
+    "POST /api/paciente/update-paciente/:id",
+    "POST /api/fisioterapeuta",
+    "GET /api/fisioterapeuta",
+    "GET /api/fisioterapeuta/:id",
+    "GET /api/fisioterapeuta/especialidad/:espe",
+    "POST /api/cita",
+    "GET /api/cita",
+    "GET /api/cita/:id",
+    "GET /api/cita/paciente/:id",
+    "PUT /api/cita/update/:id",
+    "DELETE /api/cita/delete/:id",
+    "POST /api/admin",
+    "POST /api/contacto"
+  ]
+}
