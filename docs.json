@@ -54,8 +54,11 @@
             "pages": [
               "api/users/create",
               "api/users/list",
+              "api/users/get-by-role",
               "api/users/get-by-dni",
               "api/users/update",
+              "api/users/update-status",
+              "api/users/password-recovery",
               "api/users/delete"
             ]
           },
@@ -89,7 +92,7 @@
           },
           {
             "group": "Contact",
-            "pages": ["api/contact/send"]
+            "pages": ["api/contact/send", "api/contact/list"]
           },
           {
             "group": "Admin",

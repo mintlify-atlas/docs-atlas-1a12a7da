@@ -1,0 +1,150 @@
+---
+title: 'Get Users by Role'
+api: 'GET /api/user/find'
+description: 'Retrieve users filtered by role or search by name'
+---
+
+## Endpoint
+
+```
+GET /api/user/find
+```
+
+## Authentication
+
+This endpoint requires authentication with admin privileges.
+
+**Required headers:**
+- `Authorization: Bearer <token>`
+
+**Required permissions:**
+- User must have admin role (`isAdmin` middleware)
+- Valid JWT token (`verifyToken` middleware)
+
+## Query Parameters
+
+<ParamField query="rol" type="string">
+  Filter users by role. Valid values:
+  - `paciente` - Patient role
+  - `fisioterapeuta` - Physiotherapist role
+  - `admin` - Administrator role
+</ParamField>
+
+<ParamField query="name" type="string">
+  Search users by name (case-insensitive, automatically converted to uppercase)
+</ParamField>
+
+<Note>
+  You can use either `rol` or `name` parameter, but not both simultaneously. If `name` is provided, it takes precedence.
+</Note>
+
+## Response
+
+Returns an array of user objects matching the filter criteria.
+
+<ResponseField name="users" type="array">
+  Array of user objects
+  
+  <Expandable title="User object properties">
+    <ResponseField name="_id" type="string">
+      Unique user identifier
+    </ResponseField>
+    
+    <ResponseField name="nombre" type="string">
+      User's first name
+    </ResponseField>
+    
+    <ResponseField name="apellidoPaterno" type="string">
+      User's paternal surname
+    </ResponseField>
+    
+    <ResponseField name="apellidoMaterno" type="string">
+      User's maternal surname
+    </ResponseField>
+    
+    <ResponseField name="dni" type="string">
+      National identity document number
+    </ResponseField>
+    
+    <ResponseField name="correo" type="string">
+      Email address
+    </ResponseField>
+    
+    <ResponseField name="rol" type="string">
+      User role (paciente, fisioterapeuta, or admin)
+    </ResponseField>
+    
+    <ResponseField name="estado" type="string">
+      User status (activo or inactivo)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash Filter by Role
+curl -X GET "http://localhost:8080/api/user/find?rol=paciente" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```bash Search by Name
+curl -X GET "http://localhost:8080/api/user/find?name=juan" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+</RequestExample>
+
+<ResponseExample>
+```json Filter by Role Response
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "JUAN",
+    "apellidoPaterno": "PÉREZ",
+    "apellidoMaterno": "GARCÍA",
+    "dni": "12345678",
+    "correo": "juan@example.com",
+    "rol": "paciente",
+    "estado": "activo",
+    "historialMedico": ["Knee surgery 2024"],
+    "alergias": ["Penicillin"]
+  },
+  {
+    "_id": "507f1f77bcf86cd799439012",
+    "nombre": "MARÍA",
+    "apellidoPaterno": "LÓPEZ",
+    "apellidoMaterno": "TORRES",
+    "dni": "87654321",
+    "correo": "maria@example.com",
+    "rol": "paciente",
+    "estado": "activo"
+  }
+]
+```
+
+```json Search by Name Response
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombre": "JUAN",
+    "apellidoPaterno": "PÉREZ",
+    "apellidoMaterno": "GARCÍA",
+    "dni": "12345678",
+    "correo": "juan@example.com",
+    "rol": "paciente",
+    "estado": "activo"
+  }
+]
+```
+</ResponseExample>
+
+## Error Responses
+
+| Status Code | Description |
+|-------------|-------------|
+| 401 | Missing or invalid authentication token |
+| 403 | User does not have admin privileges |
+| 404 | No users found matching the criteria |
+| 500 | Internal server error |
+
+<Info>
+  This endpoint is particularly useful for admin dashboards to filter and search through users by their role or name.
+</Info>

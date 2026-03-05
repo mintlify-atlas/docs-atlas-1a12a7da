@@ -1,0 +1,120 @@
+---
+title: 'Update User Status'
+api: 'POST /api/user/update-status/{id}'
+description: 'Update the status of a user (activate or deactivate)'
+---
+
+## Endpoint
+
+```
+POST /api/user/update-status/:id
+```
+
+## Authentication
+
+No authentication required.
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The MongoDB ObjectId of the user whose status will be updated
+</ParamField>
+
+## Request Body
+
+<ParamField body="estado" type="string" required>
+  The new status for the user. Valid values:
+  - `activo` - Active user
+  - `inactivo` - Inactive user
+</ParamField>
+
+## Response
+
+Returns a success message when the status is updated.
+
+<ResponseField name="message" type="string">
+  Success message: "status update"
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "http://localhost:8080/api/user/update-status/507f1f77bcf86cd799439011" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "estado": "inactivo"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8080/api/user/update-status/507f1f77bcf86cd799439011', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    estado: 'inactivo'
+  })
+});
+
+const data = await response.json();
+console.log(data);
+```
+
+```python Python
+import requests
+
+url = 'http://localhost:8080/api/user/update-status/507f1f77bcf86cd799439011'
+data = {
+    'estado': 'inactivo'
+}
+
+response = requests.post(url, json=data)
+print(response.json())
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+"status update"
+```
+
+```json 404 - User Not Found
+{
+  "error": "User not found"
+}
+```
+
+```json 500 - Server Error
+{
+  "error": "Internal server error"
+}
+```
+</ResponseExample>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Deactivate User" icon="user-slash">
+    Temporarily disable a user account without deleting it
+  </Card>
+  
+  <Card title="Reactivate User" icon="user-check">
+    Re-enable a previously deactivated user account
+  </Card>
+  
+  <Card title="Account Management" icon="users-gear">
+    Admin control over user account accessibility
+  </Card>
+  
+  <Card title="Security Control" icon="shield-halved">
+    Quickly disable compromised accounts
+  </Card>
+</CardGroup>
+
+<Warning>
+  Deactivating a user (setting status to `inactivo`) may prevent them from logging in or accessing the system. Ensure this is intentional before updating the status.
+</Warning>
+
+<Info>
+  The status update is logged in the application logs with the format: `[UserController] User update status by id: {id} to status {estado}`
+</Info>

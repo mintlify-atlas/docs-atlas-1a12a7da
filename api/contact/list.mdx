@@ -1,0 +1,158 @@
+---
+title: 'List Contact Messages'
+api: 'GET /api/contacto'
+description: 'Retrieve all contact form submissions (Admin only)'
+---
+
+## Endpoint
+
+```
+GET /api/contacto
+```
+
+## Authentication
+
+This endpoint requires authentication with admin privileges.
+
+**Required headers:**
+- `Authorization: Bearer <token>`
+
+**Required permissions:**
+- User must have admin role (`isAdmin` middleware)
+- Valid JWT token (`verifyToken` middleware)
+
+## Response
+
+Returns an array of all contact form submissions.
+
+<ResponseField name="contactos" type="array">
+  Array of contact message objects
+  
+  <Expandable title="Contact message properties">
+    <ResponseField name="_id" type="string">
+      Unique message identifier
+    </ResponseField>
+    
+    <ResponseField name="nombres" type="string">
+      Full name of the person who submitted the contact form
+    </ResponseField>
+    
+    <ResponseField name="correo" type="string">
+      Email address of the sender
+    </ResponseField>
+    
+    <ResponseField name="telefono" type="string">
+      Phone number of the sender
+    </ResponseField>
+    
+    <ResponseField name="asunto" type="string">
+      Subject of the message
+    </ResponseField>
+    
+    <ResponseField name="mensaje" type="string">
+      Content of the contact message
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      Timestamp when the message was created (ISO 8601 format)
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      Timestamp when the message was last updated (ISO 8601 format)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "http://localhost:8080/api/contacto" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8080/api/contacto', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  }
+});
+
+const contactos = await response.json();
+console.log(contactos);
+```
+
+```python Python
+import requests
+
+url = 'http://localhost:8080/api/contacto'
+headers = {
+    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+}
+
+response = requests.get(url, headers=headers)
+print(response.json())
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200 - Success
+[
+  {
+    "_id": "507f1f77bcf86cd799439011",
+    "nombres": "Carlos Rodríguez",
+    "correo": "carlos@example.com",
+    "telefono": "987654321",
+    "asunto": "Consulta sobre servicios",
+    "mensaje": "Me gustaría saber más información sobre los servicios de fisioterapia deportiva.",
+    "createdAt": "2026-03-05T10:30:00.000Z",
+    "updatedAt": "2026-03-05T10:30:00.000Z"
+  },
+  {
+    "_id": "507f1f77bcf86cd799439012",
+    "nombres": "Ana Martínez",
+    "correo": "ana@example.com",
+    "telefono": "912345678",
+    "asunto": "Solicitud de cita",
+    "mensaje": "Necesito agendar una cita para rehabilitación de rodilla.",
+    "createdAt": "2026-03-04T15:45:00.000Z",
+    "updatedAt": "2026-03-04T15:45:00.000Z"
+  }
+]
+```
+</ResponseExample>
+
+## Error Responses
+
+| Status Code | Description |
+|-------------|-------------|
+| 401 | Missing or invalid authentication token |
+| 403 | User does not have admin privileges |
+| 500 | Internal server error |
+
+<Info>
+  This endpoint is typically used in admin dashboards to review and respond to customer inquiries submitted through the contact form.
+</Info>
+
+<Note>
+  Contact messages are stored with automatic timestamps (`createdAt` and `updatedAt`) which can help track when inquiries were submitted and manage response times.
+</Note>
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Customer Support" icon="headset">
+    Review and respond to customer inquiries and questions
+  </Card>
+  
+  <Card title="Lead Management" icon="chart-line">
+    Track potential clients who have expressed interest
+  </Card>
+  
+  <Card title="Service Requests" icon="bell">
+    Monitor appointment requests and service inquiries
+  </Card>
+  
+  <Card title="Feedback Collection" icon="comments">
+    Gather customer feedback and suggestions
+  </Card>
+</CardGroup>
